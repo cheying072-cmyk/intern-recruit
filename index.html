@@ -837,7 +837,7 @@
 // ===========================
 // 常量 & Mock 数据
 // ===========================
-const ADMIN_PWD = 'admin2026';
+const ADMIN_PWD = '920506';
 const TOTAL_HC = 10;
 
 // Mock：管理员预置5条岗位数据
@@ -1392,7 +1392,7 @@ async function notifyHR(jobData) {
     `💡 HC余量：${jobData.hcRemaining} 个\n\n` +
     `请登录管理员后台审核：\n` +
     `👉 https://cheying072-cmyk.github.io/intern-recruit/\n` +
-    `（管理员密码：admin2026）`;
+    `（管理员密码：920506）`;
 
   // 存到localStorage作为"待审核"队列（管理员打开后台可看到）
   const pending = JSON.parse(localStorage.getItem('pendingReview') || '[]');
