@@ -363,10 +363,11 @@
     .stat-card.green .stat-num { color: var(--green); }
 
     .table-wrap { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
-    .table-wrap table { width: 100%; border-collapse: collapse; }
+    .table-scroll { overflow-x: auto; }
+    .table-wrap table { min-width: 700px; border-collapse: collapse; white-space: nowrap; }
     .table-wrap th {
       background: var(--gray-light);
-      padding: 12px 10px;
+      padding: 10px 14px;
       text-align: left;
       font-size: 12px;
       font-weight: 700;
@@ -374,12 +375,16 @@
       white-space: nowrap;
     }
     .table-wrap td {
-      padding: 12px 10px;
+      padding: 10px 14px;
       font-size: 13px;
       border-bottom: 1px solid var(--border);
       vertical-align: middle;
+      white-space: nowrap;
     }
     .table-wrap tr:last-child td { border-bottom: none; }
+    /* 操作列宽度固定，其余列内容自适应 */
+    .table-wrap th:last-child,
+    .table-wrap td:last-child { width: 160px; }
     .status-tag {
       display: inline-block;
       padding: 3px 10px;
@@ -423,7 +428,6 @@
       pointer-events: none;
     }
     .toast-bar.show { opacity: 1; }
-    .table-scroll { overflow-x: auto; }
 
     /* ===== 导航按钮区 ===== */
     .nav-btns {
@@ -1394,26 +1398,26 @@ async function notifyHR(jobData) {
     `👉 https://cheying072-cmyk.github.io/intern-recruit/\n` +
     `（管理员密码：920506）`;
 
-  // 存到localStorage作为"待审核"队列（管理员打开后台可看到）
+  // 存到localStorage作为"待审核"队列
   const pending = JSON.parse(localStorage.getItem('pendingReview') || '[]');
   pending.push({ ...jobData, status: '待审核', submittedAt: new Date().toISOString() });
   localStorage.setItem('pendingReview', JSON.stringify(pending));
 
-  // 调用 OpenClaw Webhook，触发 HR 收到 CodeWiz 消息通知
-  const WEBHOOK_URL = 'http://10.40.99.172:18789/hooks/wake';
-  const WEBHOOK_TOKEN = '12ff8290e53ba22738a351cb2998d734';
+  // 通过 ntfy.sh 推送通知（公网 HTTPS，无需登录）
+  const NTFY_TOPIC = 'xhs-intern-recruit-jiayijie1';
   try {
-    await fetch(WEBHOOK_URL, {
+    await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${WEBHOOK_TOKEN}`,
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Title': '新实习生岗位待审核',
+        'Priority': 'high',
+        'Tags': 'memo,xiaohongshu',
       },
-      body: JSON.stringify({ text: notifyText, mode: 'now' }),
+      body: notifyText,
     });
   } catch (e) {
-    // 网络不通时静默失败，localStorage 里已有记录，管理员后台仍可查看
-    console.warn('[通知] Webhook 发送失败（可能不在内网）:', e.message);
+    console.warn('[通知] 推送失败:', e.message);
   }
 }
 
@@ -1506,9 +1510,9 @@ function renderAdminTable() {
       <td><b>${escHtml(job.name)}</b></td>
       <td>${escHtml(job.dept)}</td>
       <td>${escHtml(job.title)}</td>
-      <td style="white-space:nowrap">${escHtml(job.submitTime || '-')}</td>
-      <td style="white-space:nowrap">${escHtml(job.onboardDate || '-')}</td>
-      <td style="white-space:nowrap">${statusTag}</td>
+      <td>${escHtml(job.submitTime || '-')}</td>
+      <td>${escHtml(job.onboardDate || '-')}</td>
+      <td>${statusTag}</td>
     `;
     tbody.appendChild(tr);
   });
