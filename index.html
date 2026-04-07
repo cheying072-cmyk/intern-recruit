@@ -1383,26 +1383,38 @@ function submitJob() {
 }
 
 async function notifyHR(jobData) {
-  const payload = {
-    message: `🍠 新实习生岗位待审核\n\n` +
-      `👤 用人经理：${jobData.managerName}\n` +
-      `🏢 部门：${jobData.dept}\n` +
-      `📝 职位：${jobData.title}\n` +
-      `📅 建议入职日期：${jobData.onboardDate || '待定'}\n` +
-      `💡 HC余量：${jobData.hcRemaining} 个\n\n` +
-      `请点击下方链接审核：\n` +
-      `👉 https://cheying072-cmyk.github.io/intern-recruit/admin.html\n\n` +
-      `_管理员密码：admin2026_`,
-    jobId: jobData.id,
-  };
+  const notifyText =
+    `🍠 新实习生岗位待审核\n\n` +
+    `👤 用人经理：${jobData.managerName}\n` +
+    `🏢 部门：${jobData.dept}\n` +
+    `📝 职位：${jobData.title}\n` +
+    `📅 建议入职日期：${jobData.onboardDate || '待定'}\n` +
+    `💡 HC余量：${jobData.hcRemaining} 个\n\n` +
+    `请登录管理员后台审核：\n` +
+    `👉 https://cheying072-cmyk.github.io/intern-recruit/\n` +
+    `（管理员密码：admin2026）`;
 
-  // 存到localStorage作为"待审核"队列（管理员下次打开会看到）
+  // 存到localStorage作为"待审核"队列（管理员打开后台可看到）
   const pending = JSON.parse(localStorage.getItem('pendingReview') || '[]');
   pending.push({ ...jobData, status: '待审核', submittedAt: new Date().toISOString() });
   localStorage.setItem('pendingReview', JSON.stringify(pending));
 
-  console.log('[通知] 新岗位待审核:', payload.message);
-  // 实际通知通过 CodeWiz 发送（已由系统处理）
+  // 调用 OpenClaw Webhook，触发 HR 收到 CodeWiz 消息通知
+  const WEBHOOK_URL = 'http://10.40.99.172:18789/hooks/wake';
+  const WEBHOOK_TOKEN = '12ff8290e53ba22738a351cb2998d734';
+  try {
+    await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${WEBHOOK_TOKEN}`,
+      },
+      body: JSON.stringify({ text: notifyText, mode: 'now' }),
+    });
+  } catch (e) {
+    // 网络不通时静默失败，localStorage 里已有记录，管理员后台仍可查看
+    console.warn('[通知] Webhook 发送失败（可能不在内网）:', e.message);
+  }
 }
 
 // 点击复制链接
