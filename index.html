@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🍠 实习生招聘平台</title>
+  <style>
+    /* ===== 全局样式 ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red: #FF2442;
+      --red-light: #fff0f2;
+      --red-hover: #e01e38;
+      --green: #00A14B;
+      --green-light: #e6f7ee;
+      --gray: #888;
+      --gray-light: #f5f5f5;
+      --border: #eee;
+      --text: #1a1a1a;
+      --text-sub: #666;
+      --radius: 14px;
+      --shadow: 0 2px 16px rgba(0,0,0,0.08);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+      background: #f8f8f8;
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ===== 顶部导航 ===== */
+    .header {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-logo {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--red);
+      letter-spacing: 0.5px;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .user-badge {
+      font-size: 13px;
+      color: var(--text-sub);
+      background: var(--gray-light);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+    .btn-logout {
+      font-size: 13px;
+      color: var(--red);
+      background: none;
+      border: 1px solid var(--red);
+      border-radius: 20px;
+      padding: 4px 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-logout:hover { background: var(--red); color: #fff; }
+
+    /* ===== 主容器 ===== */
+    .main-wrap {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 24px 16px 80px;
+    }
+
+    /* ===== 卡片 ===== */
+    .card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    /* ===== 按钮 ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      width: 100%;
+    }
+    .btn-primary {
+      background: var(--red);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--red-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255,36,66,0.3); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-secondary {
+      background: var(--gray-light);
+      color: var(--text);
+    }
+    .btn-secondary:hover { background: #ebebeb; }
+    .btn-ghost {
+      background: none;
+      color: var(--red);
+      border: 1.5px solid var(--red);
+    }
+    .btn-ghost:hover { background: var(--red-light); }
+    .btn-sm {
+      padding: 8px 16px;
+      font-size: 13px;
+      width: auto;
+      border-radius: 8px;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+
+    /* ===== 表单 ===== */
+    .form-group { margin-bottom: 20px; }
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    .form-label .required { color: var(--red); margin-left: 3px; }
+    .form-input, .form-textarea, .form-select {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 15px;
+      font-family: inherit;
+      color: var(--text);
+      background: #fff;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+    .form-input:focus, .form-textarea:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(255,36,66,0.08); }
+    .form-textarea { resize: vertical; min-height: 100px; }
+    .form-hint { font-size: 12px; color: var(--text-sub); margin-top: 5px; }
+
+    /* ===== 步骤条 ===== */
+    .steps {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 0 8px;
+      gap: 0;
+    }
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      position: relative;
+    }
+    .step-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      width: 100%;
+      height: 2px;
+      background: var(--border);
+      z-index: 0;
+    }
+    .step-item.done:not(:last-child)::after,
+    .step-item.active:not(:last-child)::after { background: var(--red); }
+    .step-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--border);
+      color: var(--gray);
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+      transition: all 0.3s;
+    }
+    .step-item.active .step-dot {
+      background: var(--red);
+      color: #fff;
+      box-shadow: 0 0 0 4px rgba(255,36,66,0.15);
+    }
+    .step-item.done .step-dot {
+      background: var(--red);
+      color: #fff;
+    }
+    .step-label {
+      font-size: 10px;
+      color: var(--gray);
+      margin-top: 4px;
+      white-space: nowrap;
+    }
+    .step-item.active .step-label { color: var(--red); font-weight: 600; }
+    .step-item.done .step-label { color: var(--red); }
+
+    /* ===== 标题 ===== */
+    .page-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .page-sub { font-size: 14px; color: var(--text-sub); margin-bottom: 24px; }
+
+    /* ===== HC信息展示 ===== */
+    .hc-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .hc-item {
+      background: var(--gray-light);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+    .hc-item.highlight { background: var(--red-light); }
+    .hc-num { font-size: 28px; font-weight: 800; color: var(--text); }
+    .hc-item.highlight .hc-num { color: var(--red); }
+    .hc-label { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+    .hc-warn {
+      background: #fff5f5;
+      border: 1px solid #ffcdd2;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #d32f2f;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    /* ===== AI生成区 ===== */
+    .ai-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 20px;
+      color: var(--text-sub);
+      font-size: 14px;
+    }
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2.5px solid var(--border);
+      border-top-color: var(--red);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ===== 汇总卡片 ===== */
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-key { font-size: 13px; color: var(--text-sub); flex-shrink: 0; width: 90px; }
+    .summary-val { font-size: 14px; color: var(--text); font-weight: 500; text-align: right; flex: 1; word-break: break-all; }
+
+    /* ===== 成功页 ===== */
+    .success-icon { font-size: 64px; text-align: center; margin-bottom: 12px; }
+    .success-title { font-size: 20px; font-weight: 700; text-align: center; color: var(--green); margin-bottom: 8px; }
+    .success-sub { font-size: 14px; color: var(--text-sub); text-align: center; margin-bottom: 24px; }
+    .job-link {
+      background: var(--gray-light);
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 12px;
+      color: var(--red);
+      word-break: break-all;
+      text-align: center;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .job-link:hover { background: var(--red-light); }
+    .email-tip {
+      font-size: 13px;
+      color: var(--text-sub);
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    /* ===== 登录页 ===== */
+    .login-wrap {
+      max-width: 400px;
+      margin: 40px auto;
+      padding: 0 16px;
+    }
+    .login-hero {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .login-hero-logo { font-size: 40px; margin-bottom: 8px; }
+    .login-hero-title { font-size: 22px; font-weight: 800; color: var(--text); }
+    .login-hero-sub { font-size: 14px; color: var(--text-sub); margin-top: 4px; }
+
+    .role-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .role-card {
+      background: #fff;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .role-card:hover { border-color: var(--red); background: var(--red-light); }
+    .role-card.selected { border-color: var(--red); background: var(--red-light); box-shadow: 0 0 0 3px rgba(255,36,66,0.1); }
+    .role-icon { font-size: 32px; margin-bottom: 8px; }
+    .role-name { font-size: 15px; font-weight: 700; color: var(--text); }
+    .role-desc { font-size: 12px; color: var(--text-sub); margin-top: 3px; }
+
+    .login-panel { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; }
+    .login-panel-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+    .admin-hint { font-size: 12px; color: var(--text-sub); margin-top: 8px; }
+
+    /* ===== 管理员视图 ===== */
+    .admin-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .stat-card {
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    .stat-num { font-size: 32px; font-weight: 800; color: var(--red); }
+    .stat-label { font-size: 13px; color: var(--text-sub); margin-top: 2px; }
+    .stat-card.green .stat-num { color: var(--green); }
+
+    .table-wrap { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .table-wrap table { width: 100%; border-collapse: collapse; }
+    .table-wrap th {
+      background: var(--gray-light);
+      padding: 12px 10px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-sub);
+      white-space: nowrap;
+    }
+    .table-wrap td {
+      padding: 12px 10px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .table-wrap tr:last-child td { border-bottom: none; }
+    .status-tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--green-light);
+      color: var(--green);
+    }
+    .table-scroll { overflow-x: auto; }
+
+    /* ===== 导航按钮区 ===== */
+    .nav-btns {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .nav-btns .btn { flex: 1; }
+
+    /* ===== 弹窗 ===== */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 16px;
+    }
+    .modal {
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      max-width: 340px;
+      width: 100%;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.16);
+    }
+    .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 10px; }
+    .modal-body { font-size: 14px; color: var(--text-sub); margin-bottom: 20px; line-height: 1.6; }
+    .modal-btns { display: flex; gap: 10px; }
+    .modal-btns .btn { flex: 1; }
+
+    /* ===== 日期建议 ===== */
+    .date-suggestion {
+      background: #e8f5e9;
+      border: 1px solid #a5d6a7;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 14px;
+      color: #2e7d32;
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ===== 响应式调整 ===== */
+    @media (max-width: 360px) {
+      .hc-grid { grid-template-columns: repeat(3, 1fr); }
+      .table-wrap td, .table-wrap th { padding: 10px 6px; font-size: 11px; }
+    }
+
+    /* ===== 隐藏类 ===== */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- ============================
+     顶部导航（登录后显示）
+     ============================ -->
+<header class="header hidden" id="appHeader">
+  <div class="header-logo">🍠 实习生招聘平台</div>
+  <div class="header-right">
+    <span class="user-badge" id="headerUserBadge"></span>
+    <button class="btn-logout" onclick="logout()">退出登录</button>
+  </div>
+</header>
+
+<!-- ============================
+     登录页
+     ============================ -->
+<div id="loginPage">
+  <div class="login-wrap">
+    <div class="login-hero">
+      <div class="login-hero-logo">🍠</div>
+      <div class="login-hero-title">实习生招聘平台</div>
+      <div class="login-hero-sub">小红书内部 · Intern Recruitment</div>
+    </div>
+
+    <!-- 角色选择 -->
+    <div class="role-cards">
+      <div class="role-card" id="roleManager" onclick="selectRole('manager')">
+        <div class="role-icon">👔</div>
+        <div class="role-name">我是用人经理</div>
+        <div class="role-desc">发布实习岗位需求</div>
+      </div>
+      <div class="role-card" id="roleAdmin" onclick="selectRole('admin')">
+        <div class="role-icon">🛡️</div>
+        <div class="role-name">我是管理员</div>
+        <div class="role-desc">查看所有岗位数据</div>
+      </div>
+    </div>
+
+    <!-- 用人经理登录面板 -->
+    <div class="login-panel hidden" id="panelManager">
+      <div class="login-panel-title">👔 用人经理登录</div>
+      <div class="form-group">
+        <label class="form-label">薯名（昵称）<span class="required">*</span></label>
+        <input class="form-input" id="inputManagerName" type="text" placeholder="请输入您的薯名" maxlength="20" />
+      </div>
+      <button class="btn btn-primary" onclick="loginAsManager()">进入平台</button>
+    </div>
+
+    <!-- 管理员登录面板 -->
+    <div class="login-panel hidden" id="panelAdmin">
+      <div class="login-panel-title">🛡️ 管理员登录</div>
+      <div class="form-group">
+        <label class="form-label">管理员密码<span class="required">*</span></label>
+        <input class="form-input" id="inputAdminPwd" type="password" placeholder="请输入管理员密码"
+               onkeydown="if(event.key==='Enter') loginAsAdmin()" />
+        <div class="admin-hint">💡 管理员密码由HR设置</div>
+      </div>
+      <button class="btn btn-primary" onclick="loginAsAdmin()">进入管理后台</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================
+     用人经理流程页
+     ============================ -->
+<div id="managerPage" class="hidden">
+  <div class="main-wrap">
+
+    <!-- 步骤条 -->
+    <div class="steps" id="stepsBar">
+      <div class="step-item" id="stepItem1">
+        <div class="step-dot">1</div>
+        <div class="step-label">基础信息</div>
+      </div>
+      <div class="step-item" id="stepItem2">
+        <div class="step-dot">2</div>
+        <div class="step-label">HC确认</div>
+      </div>
+      <div class="step-item" id="stepItem3">
+        <div class="step-dot">3</div>
+        <div class="step-label">生成JD</div>
+      </div>
+      <div class="step-item" id="stepItem4">
+        <div class="step-dot">4</div>
+        <div class="step-label">交接时间</div>
+      </div>
+      <div class="step-item" id="stepItem5">
+        <div class="step-dot">5</div>
+        <div class="step-label">确认提交</div>
+      </div>
+    </div>
+
+    <!-- Step 1: 基础信息 -->
+    <div id="step1" class="hidden">
+      <div class="card">
+        <div class="page-title">基础信息</div>
+        <div class="page-sub">告诉我们这个实习生岗位的基本情况</div>
+
+        <div class="form-group">
+          <label class="form-label">薯名</label>
+          <input class="form-input" id="s1Name" type="text" readonly style="background:#f8f8f8;color:#999" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">所在部门<span class="required">*</span></label>
+          <input class="form-input" id="s1Dept" type="text" placeholder="例如：电商营销、商业分析..." maxlength="30" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">希望这个实习生做的事情和解决的问题<span class="required">*</span></label>
+          <textarea class="form-textarea" id="s1Desc" rows="5"
+            placeholder="例如：帮助团队进行数据分析，搭建日常运营报表，跟进广告投放效果，参与用户调研和竞品分析..."></textarea>
+          <div class="form-hint">描述越详细，AI生成的JD越精准</div>
+        </div>
+
+        <div class="nav-btns">
+          <button class="btn btn-primary" onclick="goStep(2)">下一步 →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: HC确认 -->
+    <div id="step2" class="hidden">
+      <div class="card">
+        <div class="page-title">HC 余量确认</div>
+        <div class="page-sub">请确认您当前的实习生招聘名额</div>
+
+        <div class="hc-grid">
+          <div class="hc-item">
+            <div class="hc-num">10</div>
+            <div class="hc-label">总 HC</div>
+          </div>
+          <div class="hc-item">
+            <div class="hc-num" id="hcUsed">-</div>
+            <div class="hc-label">已使用</div>
+          </div>
+          <div class="hc-item highlight">
+            <div class="hc-num" id="hcLeft">-</div>
+            <div class="hc-label">剩余可用</div>
+          </div>
+        </div>
+
+        <div id="hcWarn" class="hc-warn hidden">
+          ⚠️ 当前HC已用完，请联系HR申请
+        </div>
+
+        <div class="nav-btns">
+          <button class="btn btn-secondary" onclick="goStep(1)">← 上一步</button>
+          <button class="btn btn-primary" onclick="goStep(3)">确认，下一步 →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: AI生成JD -->
+    <div id="step3" class="hidden">
+      <div class="card">
+        <div class="page-title">AI 生成职位信息</div>
+        <div class="page-sub">根据您的描述，AI将自动生成职位名称和JD</div>
+
+        <div style="margin-bottom:20px">
+          <button class="btn btn-ghost" id="btnGenerate" onclick="generateJD()">
+            ✨ 生成职位名称和JD
+          </button>
+        </div>
+
+        <div id="aiLoading" class="ai-loading hidden">
+          <div class="spinner"></div>
+          AI 正在生成中，请稍候...
+        </div>
+
+        <div id="jdResult" class="hidden">
+          <div class="form-group">
+            <label class="form-label">职位名称（可编辑）</label>
+            <input class="form-input" id="s3JobTitle" type="text" placeholder="职位名称" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">职位描述 JD（可编辑）</label>
+            <textarea class="form-textarea" id="s3JD" rows="10"></textarea>
+            <div class="form-hint">可直接在上方编辑调整 JD 内容</div>
+          </div>
+        </div>
+
+        <div class="nav-btns">
+          <button class="btn btn-secondary" onclick="goStep(2)">← 上一步</button>
+          <button class="btn btn-primary" id="btnStep3Next" onclick="goStep(4)" disabled>下一步 →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: 交接时间 -->
+    <div id="step4" class="hidden">
+      <div class="card">
+        <div class="page-title">交接时间安排</div>
+        <div class="page-sub">填写前任实习生的离职日期（如为新增岗位可跳过）</div>
+
+        <div class="form-group">
+          <label class="form-label">前任实习生离职日期</label>
+          <input class="form-input" id="s4LastDate" type="date"
+                 onchange="calcOnboardDate()" />
+          <div class="form-hint">不填代表该岗位是新增岗位</div>
+        </div>
+
+        <div id="s4Suggestion" class="hidden">
+          <div class="date-suggestion" id="s4SuggestionText"></div>
+        </div>
+
+        <div class="form-group" style="margin-top:16px">
+          <label class="form-label">建议入职日期（可手动修改）</label>
+          <input class="form-input" id="s4OnboardDate" type="date" />
+        </div>
+
+        <div class="nav-btns">
+          <button class="btn btn-secondary" onclick="goStep(3)">← 上一步</button>
+          <button class="btn btn-primary" onclick="goStep(5)">下一步 →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 5: 确认提交 -->
+    <div id="step5" class="hidden">
+      <div class="card">
+        <div class="page-title">确认并提交</div>
+        <div class="page-sub">请核对以下信息，确认无误后提交</div>
+
+        <div id="summaryContent">
+          <div class="summary-row">
+            <div class="summary-key">薯名</div>
+            <div class="summary-val" id="sumName">-</div>
+          </div>
+          <div class="summary-row">
+            <div class="summary-key">所在部门</div>
+            <div class="summary-val" id="sumDept">-</div>
+          </div>
+          <div class="summary-row">
+            <div class="summary-key">职位名称</div>
+            <div class="summary-val" id="sumTitle">-</div>
+          </div>
+          <div class="summary-row">
+            <div class="summary-key">JD内容</div>
+            <div class="summary-val" id="sumJD" style="white-space:pre-line;text-align:left;">-</div>
+          </div>
+          <div class="summary-row">
+            <div class="summary-key">HC余量</div>
+            <div class="summary-val" id="sumHC">-</div>
+          </div>
+          <div class="summary-row">
+            <div class="summary-key">建议入职日期</div>
+            <div class="summary-val" id="sumOnboard">-</div>
+          </div>
+        </div>
+
+        <div class="nav-btns" style="margin-top:20px">
+          <button class="btn btn-secondary" onclick="goStep(4)">← 上一步</button>
+          <button class="btn btn-primary" onclick="submitJob()">🚀 提交岗位</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 提交成功页 -->
+    <div id="stepSuccess" class="hidden">
+      <div class="card" style="text-align:center">
+        <div class="success-icon">✅</div>
+        <div class="success-title">岗位已提交，等待HR审核</div>
+        <div class="success-sub">HR将在1-2个工作日内审核您的岗位需求</div>
+
+        <div class="job-link" id="jobLinkBox" onclick="copyJobLink()"></div>
+        <div class="email-tip">📧 简历将自动推送到您的邮箱</div>
+
+        <button class="btn btn-primary" onclick="publishNew()">+ 发布新岗位</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================
+     管理员视图页
+     ============================ -->
+<div id="adminPage" class="hidden">
+  <div class="main-wrap" style="max-width:600px">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="font-size:18px;font-weight:800;color:var(--text)">📋 岗位管理后台</div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="admin-stats">
+      <div class="stat-card">
+        <div class="stat-num" id="statTotal">0</div>
+        <div class="stat-label">总岗位数</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-num" id="statActive">0</div>
+        <div class="stat-label">招聘中</div>
+      </div>
+    </div>
+
+    <!-- 岗位列表 -->
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>薯名</th>
+              <th>部门</th>
+              <th>职位名称</th>
+              <th>提交时间</th>
+              <th>建议入职</th>
+              <th>状态</th>
+            </tr>
+          </thead>
+          <tbody id="adminTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================
+     弹窗（HC为0时确认）
+     ============================ -->
+<div class="modal-overlay hidden" id="hcModal">
+  <div class="modal">
+    <div class="modal-title">⚠️ HC 已用完</div>
+    <div class="modal-body">
+      您当前的实习生HC余量已用完。如需继续提交需求，请事先联系HR申请额外HC。<br/><br/>
+      是否仍要继续？
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmHcModal()">继续提交</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================
+     JavaScript 逻辑
+     ============================ -->
+<script>
+// ===========================
+// 常量 & Mock 数据
+// ===========================
+const ADMIN_PWD = 'admin2026';
+const TOTAL_HC = 10;
+
+// Mock：管理员预置5条岗位数据
+const MOCK_JOBS = [
+  { name: '木吒', dept: '业务市场一组', title: '商业分析实习生', submitTime: '2026-04-01', onboardDate: '2026-04-15', status: '招聘中' },
+  { name: '来克', dept: '电商营销',     title: '电商运营实习生', submitTime: '2026-04-02', onboardDate: '2026-04-20', status: '招聘中' },
+  { name: '伽马', dept: '业务培训',     title: '培训助理实习生', submitTime: '2026-04-03', onboardDate: '2026-04-18', status: '招聘中' },
+  { name: '佩吉', dept: '平台大事件',   title: '项目管理实习生', submitTime: '2026-04-04', onboardDate: '2026-04-22', status: '招聘中' },
+  { name: '存希', dept: '行业营销三组', title: '营销策划实习生', submitTime: '2026-04-05', onboardDate: '2026-04-25', status: '招聘中' },
+];
+
+// ===========================
+// 状态
+// ===========================
+let currentRole = null;   // 'manager' | 'admin'
+let currentUser = null;   // 薯名
+let currentStep = 1;      // 1-5
+let hcUsed = 0;
+let hcLeft = 0;
+let jdGenerated = false;
+let hcModalCallback = null;
+
+// ===========================
+// 初始化（页面加载）
+// ===========================
+window.addEventListener('DOMContentLoaded', () => {
+  // 恢复登录状态
+  const saved = localStorage.getItem('internRecruitAuth');
+  if (saved) {
+    const auth = JSON.parse(saved);
+    if (auth.role === 'manager' && auth.name) {
+      currentRole = 'manager';
+      currentUser = auth.name;
+      enterManagerPage();
+    } else if (auth.role === 'admin') {
+      currentRole = 'admin';
+      enterAdminPage();
+    }
+  }
+});
+
+// ===========================
+// 登录 - 角色选择
+// ===========================
+function selectRole(role) {
+  // 高亮选中卡片
+  document.getElementById('roleManager').classList.toggle('selected', role === 'manager');
+  document.getElementById('roleAdmin').classList.toggle('selected', role === 'admin');
+
+  // 显示对应面板
+  document.getElementById('panelManager').classList.toggle('hidden', role !== 'manager');
+  document.getElementById('panelAdmin').classList.toggle('hidden', role !== 'admin');
+
+  currentRole = role;
+}
+
+function loginAsManager() {
+  const name = document.getElementById('inputManagerName').value.trim();
+  if (!name) { alert('请输入您的薯名'); return; }
+  currentUser = name;
+  localStorage.setItem('internRecruitAuth', JSON.stringify({ role: 'manager', name }));
+  enterManagerPage();
+}
+
+function loginAsAdmin() {
+  const pwd = document.getElementById('inputAdminPwd').value;
+  if (pwd !== ADMIN_PWD) { alert('密码错误，请重试'); return; }
+  currentRole = 'admin';
+  localStorage.setItem('internRecruitAuth', JSON.stringify({ role: 'admin' }));
+  enterAdminPage();
+}
+
+// ===========================
+// 进入各视图
+// ===========================
+function enterManagerPage() {
+  document.getElementById('loginPage').classList.add('hidden');
+  document.getElementById('adminPage').classList.add('hidden');
+  document.getElementById('managerPage').classList.remove('hidden');
+  document.getElementById('appHeader').classList.remove('hidden');
+
+  document.getElementById('headerUserBadge').textContent = '👔 ' + currentUser;
+
+  // 初始化HC（每个用户随机已用2-8，但同一薯名保持稳定 - 用名字做种子）
+  const seed = hashName(currentUser);
+  hcUsed = 2 + (seed % 7); // 2-8
+  hcLeft = TOTAL_HC - hcUsed;
+
+  // 重置流程
+  resetManagerFlow();
+}
+
+function enterAdminPage() {
+  document.getElementById('loginPage').classList.add('hidden');
+  document.getElementById('managerPage').classList.add('hidden');
+  document.getElementById('adminPage').classList.remove('hidden');
+  document.getElementById('appHeader').classList.remove('hidden');
+  document.getElementById('headerUserBadge').textContent = '🛡️ 管理员';
+
+  renderAdminTable();
+}
+
+// 简单哈希，用薯名生成确定性随机数
+function hashName(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) {
+    h = (h * 31 + name.charCodeAt(i)) % 100;
+  }
+  return h;
+}
+
+// ===========================
+// 登出
+// ===========================
+function logout() {
+  localStorage.removeItem('internRecruitAuth');
+  currentRole = null;
+  currentUser = null;
+  document.getElementById('appHeader').classList.add('hidden');
+  document.getElementById('managerPage').classList.add('hidden');
+  document.getElementById('adminPage').classList.add('hidden');
+  document.getElementById('loginPage').classList.remove('hidden');
+  // 重置登录表单
+  document.getElementById('inputManagerName').value = '';
+  document.getElementById('inputAdminPwd').value = '';
+  document.getElementById('panelManager').classList.add('hidden');
+  document.getElementById('panelAdmin').classList.add('hidden');
+  document.getElementById('roleManager').classList.remove('selected');
+  document.getElementById('roleAdmin').classList.remove('selected');
+}
+
+// ===========================
+// 步骤管理
+// ===========================
+function resetManagerFlow() {
+  currentStep = 1;
+  jdGenerated = false;
+  // 清空表单
+  document.getElementById('s1Name').value = currentUser;
+  document.getElementById('s1Dept').value = '';
+  document.getElementById('s1Desc').value = '';
+  document.getElementById('s3JobTitle').value = '';
+  document.getElementById('s3JD').value = '';
+  document.getElementById('s4LastDate').value = '';
+  document.getElementById('s4OnboardDate').value = '';
+  document.getElementById('s4Suggestion').classList.add('hidden');
+  document.getElementById('jdResult').classList.add('hidden');
+  document.getElementById('aiLoading').classList.add('hidden');
+  document.getElementById('btnStep3Next').disabled = true;
+
+  showStep(1);
+}
+
+function showStep(n) {
+  // 隐藏所有step
+  [1,2,3,4,5,'Success'].forEach(i => {
+    document.getElementById('step' + i).classList.add('hidden');
+  });
+
+  currentStep = n;
+
+  if (n === 'Success') {
+    document.getElementById('stepSuccess').classList.remove('hidden');
+    document.getElementById('stepsBar').classList.add('hidden');
+    return;
+  }
+
+  document.getElementById('stepsBar').classList.remove('hidden');
+  document.getElementById('step' + n).classList.remove('hidden');
+
+  // 更新步骤条
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById('stepItem' + i);
+    el.classList.remove('active', 'done');
+    if (i < n) el.classList.add('done');
+    else if (i === n) el.classList.add('active');
+    // 步骤完成后换成勾
+    const dot = el.querySelector('.step-dot');
+    if (i < n) dot.textContent = '✓';
+    else dot.textContent = i;
+  }
+}
+
+// 步骤切换前验证
+function goStep(targetStep) {
+  // 向后跳 - 先验证当前步骤
+  if (targetStep > currentStep) {
+    if (!validateStep(currentStep)) return;
+  }
+
+  // 特殊处理：Step2 HC为0时弹确认
+  if (targetStep === 3 && hcLeft <= 0) {
+    hcModalCallback = () => showStep(3);
+    document.getElementById('hcModal').classList.remove('hidden');
+    return;
+  }
+
+  // 进入Step2时填充HC数据
+  if (targetStep === 2) {
+    document.getElementById('hcUsed').textContent = hcUsed;
+    document.getElementById('hcLeft').textContent = hcLeft;
+    document.getElementById('hcWarn').classList.toggle('hidden', hcLeft > 0);
+  }
+
+  // 进入Step5时填充汇总
+  if (targetStep === 5) {
+    fillSummary();
+  }
+
+  showStep(targetStep);
+}
+
+function validateStep(step) {
+  if (step === 1) {
+    const dept = document.getElementById('s1Dept').value.trim();
+    const desc = document.getElementById('s1Desc').value.trim();
+    if (!dept) { alert('请填写所在部门'); return false; }
+    if (!desc) { alert('请描述实习生的工作内容'); return false; }
+  }
+  if (step === 3) {
+    if (!jdGenerated) { alert('请先点击"生成职位名称和JD"按钮'); return false; }
+    const title = document.getElementById('s3JobTitle').value.trim();
+    const jd = document.getElementById('s3JD').value.trim();
+    if (!title) { alert('职位名称不能为空'); return false; }
+    if (!jd) { alert('JD内容不能为空'); return false; }
+  }
+  return true;
+}
+
+// ===========================
+// HC 弹窗
+// ===========================
+function closeModal() {
+  document.getElementById('hcModal').classList.add('hidden');
+  hcModalCallback = null;
+}
+function confirmHcModal() {
+  document.getElementById('hcModal').classList.add('hidden');
+  if (hcModalCallback) { hcModalCallback(); hcModalCallback = null; }
+}
+
+// ===========================
+// AI 生成 JD 逻辑
+// ===========================
+function generateJD() {
+  const desc = document.getElementById('s1Desc').value.trim();
+  if (!desc) { alert('请先在Step 1中填写实习生的工作描述'); return; }
+
+  document.getElementById('btnGenerate').disabled = true;
+  document.getElementById('aiLoading').classList.remove('hidden');
+  document.getElementById('jdResult').classList.add('hidden');
+
+  setTimeout(() => {
+    const { title, jd } = buildJDFromDesc(desc);
+    document.getElementById('s3JobTitle').value = title;
+    document.getElementById('s3JD').value = jd;
+
+    document.getElementById('aiLoading').classList.add('hidden');
+    document.getElementById('jdResult').classList.remove('hidden');
+    document.getElementById('btnGenerate').disabled = false;
+    document.getElementById('btnStep3Next').disabled = false;
+    jdGenerated = true;
+  }, 2000);
+}
+
+// 关键词提取 → 职位名称 + JD 模板生成
+function buildJDFromDesc(desc) {
+  const d = desc.toLowerCase();
+
+  // 方向判断（优先级：最具体→最宽泛）
+  let direction = '业务运营';
+  let duties = [];
+  let reqs = [];
+
+  if (d.includes('数据') || d.includes('分析') || d.includes('报表') || d.includes('统计')) {
+    direction = '数据分析';
+    duties = [
+      '协助搭建和维护业务数据看板，输出日/周/月度数据报表',
+      '参与用户行为数据分析，提炼业务洞察和优化建议',
+      '配合业务团队设计数据监控指标体系，跟踪关键业务指标',
+      '协助进行竞品数据调研，输出市场分析报告',
+      '独立完成专项数据分析课题，输出可落地的结论和建议',
+    ];
+    reqs = [
+      '本科及以上学历，统计学、数学、计算机、经济学等相关专业优先',
+      '熟练使用 Excel/Python/SQL 进行数据处理和分析',
+      '具备基本的数据可视化能力（Tableau、PowerBI 等），有较强的图表审美',
+      '逻辑清晰，善于从数据中发现规律，有较强的问题拆解能力',
+      '有互联网或电商数据分析实习经历者优先',
+    ];
+  } else if (d.includes('广告') || d.includes('投放') || d.includes('sem') || d.includes('信息流')) {
+    direction = '广告投放';
+    duties = [
+      '协助执行广告投放计划，包括素材上传、定向设置、日常优化',
+      '每日跟踪各渠道投放效果，输出投放日报及优化建议',
+      '参与广告素材策划，协调设计和内容团队出稿',
+      '协助进行竞品广告监测，分析行业投放趋势',
+      '支持跨部门协作，推进投放项目落地',
+    ];
+    reqs = [
+      '本科及以上在读，市场营销、传播学、电商相关专业优先',
+      '对互联网广告投放逻辑有基本了解，熟悉主流平台（小红书/抖音/微信等）',
+      '数据敏感，熟练使用 Excel，会基础数据透视',
+      '执行力强，能在高强度节奏下保持细致',
+      '有广告投放或电商运营实习经历者优先',
+    ];
+  } else if (d.includes('运营') || d.includes('活动') || d.includes('用户') || d.includes('推广')) {
+    direction = '业务运营';
+    duties = [
+      '协助策划和执行线上运营活动，跟进活动全流程落地',
+      '负责日常运营数据跟踪，定期输出运营报告',
+      '协助管理运营物料，协调各部门完成内容和视觉产出',
+      '参与用户分层策略制定，配合执行精细化运营方案',
+      '整理用户反馈，提炼问题，为产品和运营迭代提供依据',
+    ];
+    reqs = [
+      '本科及以上在读，市场营销、传播、电商等相关专业',
+      '有互联网运营或电商相关实习经历者优先',
+      '对用户增长、内容运营、活动策划有浓厚兴趣',
+      '执行力强，善于跨部门协作，沟通表达清晰',
+      '熟练使用 Office，会基础数据分析',
+    ];
+  } else if (d.includes('项目') || d.includes('协调') || d.includes('管理') || d.includes('推进')) {
+    direction = '项目管理';
+    duties = [
+      '协助项目经理跟踪多条项目线的进度，维护项目看板',
+      '整理和归档项目文档，保证信息同步和流转效率',
+      '协调各职能团队资源，推动节点按时交付',
+      '参与项目复盘，整理问题清单及改进方案',
+      '处理日常跨部门沟通事项，保障项目信息流畅',
+    ];
+    reqs = [
+      '本科及以上在读，管理、商科、工程类相关专业',
+      '有较强的逻辑思维和结构化表达能力',
+      '熟练使用 Office/飞书/Notion 等效率工具',
+      '责任心强，注重细节，善于在多线并行中保持有序',
+      '有项目管理实习经历或持有 PMP 证书者优先',
+    ];
+  } else if (d.includes('内容') || d.includes('文案') || d.includes('写作') || d.includes('编辑')) {
+    direction = '内容创作';
+    duties = [
+      '参与日常内容选题策划，结合平台趋势提出内容方向',
+      '独立完成图文、短视频脚本等内容产出',
+      '协助内容数据分析，跟踪内容效果并提出优化建议',
+      '参与达人/KOL 合作项目，协助内容审核和交付',
+      '持续研究竞品内容趋势，输出竞品分析报告',
+    ];
+    reqs = [
+      '本科及以上在读，中文、新闻传播、市场营销等相关专业优先',
+      '文字功底扎实，有较强的内容感和审美',
+      '对小红书、抖音等内容平台有深入了解',
+      '有内容创作、自媒体运营或品牌传播实习经历者优先',
+      '创意活跃，能快速理解品牌调性并产出对应内容',
+    ];
+  } else if (d.includes('招聘') || d.includes('hr') || d.includes('人才') || d.includes('简历')) {
+    direction = '招聘助理';
+    duties = [
+      '协助HR整理和初筛候选人简历，维护人才库',
+      '协调面试日程安排，与候选人及面试官保持沟通',
+      '整理面试反馈，更新招聘系统数据',
+      '参与招聘报告产出，统计各渠道数据',
+      '协助组织校园招聘及实习生项目落地',
+    ];
+    reqs = [
+      '本科及以上在读，人力资源、心理学、管理类相关专业优先',
+      '沟通能力强，待人热情，有较好的候选人体验意识',
+      '细心负责，信息处理能力强，熟练使用 Office',
+      '有招聘、HR实习经历者优先',
+      '能接受每周至少3天实习',
+    ];
+  } else {
+    // 兜底：通用方向
+    direction = '业务支持';
+    const keywords = extractKeywords(desc);
+    duties = [
+      `协助团队完成${keywords}相关日常工作，推进项目落地执行`,
+      '整理业务数据，定期产出数据报告，支持业务决策',
+      '参与部门跨团队协作，确保信息及时同步',
+      '跟进重点项目进度，协助复盘和总结',
+      '协助完成临时性专项任务，灵活响应业务需求',
+    ];
+    reqs = [
+      '本科及以上在读，相关专业背景优先',
+      '学习能力强，适应快节奏工作环境',
+      '执行力强，做事有条理，注重交付质量',
+      '善于沟通，具备团队协作精神',
+      '熟练使用 Office，有相关实习经历者优先',
+    ];
+  }
+
+  const dept = document.getElementById('s1Dept').value.trim() || '相关部门';
+  const title = `${direction}方向实习生`;
+
+  const jd = `【岗位职责】
+${duties.slice(0, 4).map((d, i) => `${i+1}. ${d}`).join('\n')}
+
+【任职要求】
+${reqs.slice(0, 4).map((r, i) => `${i+1}. ${r}`).join('\n')}
+
+【实习信息】
+· 实习时间：每周至少 4 天，建议连续实习 3 个月以上
+· 实习地点：上海（${dept}）
+· 薪资：根据能力匹配竞争力薪资`;
+
+  return { title, jd };
+}
+
+function extractKeywords(desc) {
+  const words = desc.replace(/[，。！？、；：""''（）【】\s]/g, ' ').split(' ').filter(w => w.length >= 2);
+  return words.slice(0, 3).join('、') || '业务';
+}
+
+// ===========================
+// Step 4: 计算建议入职日期
+// ===========================
+function calcOnboardDate() {
+  const lastDateStr = document.getElementById('s4LastDate').value;
+  if (!lastDateStr) {
+    document.getElementById('s4Suggestion').classList.add('hidden');
+    document.getElementById('s4OnboardDate').value = '';
+    return;
+  }
+
+  const lastDate = new Date(lastDateStr);
+  // 建议入职 = 前任离职日期 - 3个工作日
+  const onboard = subtractWorkdays(lastDate, 3);
+
+  const y = onboard.getFullYear();
+  const m = String(onboard.getMonth() + 1).padStart(2, '0');
+  const d = String(onboard.getDate()).padStart(2, '0');
+  const onboardStr = `${y}-${m}-${d}`;
+
+  document.getElementById('s4OnboardDate').value = onboardStr;
+  document.getElementById('s4SuggestionText').textContent =
+    `📅 建议入职日期：${y}年${m}月${d}日（前任离职前3个工作日）`;
+  document.getElementById('s4Suggestion').classList.remove('hidden');
+}
+
+// 减去N个工作日（排除周六、周日）
+function subtractWorkdays(date, days) {
+  let d = new Date(date);
+  let count = 0;
+  while (count < days) {
+    d.setDate(d.getDate() - 1);
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) count++;
+  }
+  return d;
+}
+
+// ===========================
+// Step 5: 填充汇总
+// ===========================
+function fillSummary() {
+  document.getElementById('sumName').textContent = document.getElementById('s1Name').value || '-';
+  document.getElementById('sumDept').textContent = document.getElementById('s1Dept').value || '-';
+  document.getElementById('sumTitle').textContent = document.getElementById('s3JobTitle').value || '-';
+  document.getElementById('sumJD').textContent = document.getElementById('s3JD').value || '-';
+  document.getElementById('sumHC').textContent = `剩余 ${hcLeft} 个（共 ${TOTAL_HC} 个）`;
+
+  const onboard = document.getElementById('s4OnboardDate').value;
+  if (onboard) {
+    const [y, m, d] = onboard.split('-');
+    document.getElementById('sumOnboard').textContent = `${y}年${m}月${d}日`;
+  } else {
+    document.getElementById('sumOnboard').textContent = '新增岗位（无前任）';
+  }
+}
+
+// ===========================
+// 提交岗位
+// ===========================
+function submitJob() {
+  const jobId = 'INTERN-' + String(Math.floor(Math.random() * 100000000)).padStart(8, '0');
+  const jobLink = `https://hr.xiaohongshu.com/job/${jobId}`;
+
+  // 构建岗位记录
+  const now = new Date();
+  const submitTime = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const onboard = document.getElementById('s4OnboardDate').value || '-';
+
+  const job = {
+    name: document.getElementById('s1Name').value,
+    dept: document.getElementById('s1Dept').value,
+    title: document.getElementById('s3JobTitle').value,
+    jd: document.getElementById('s3JD').value,
+    submitTime,
+    onboardDate: onboard,
+    status: '招聘中',
+    jobLink,
+  };
+
+  // 保存到 localStorage
+  const saved = JSON.parse(localStorage.getItem('internRecruitJobs') || '[]');
+  saved.push(job);
+  localStorage.setItem('internRecruitJobs', JSON.stringify(saved));
+
+  // 显示成功页
+  document.getElementById('jobLinkBox').textContent = jobLink;
+  showStep('Success');
+}
+
+// 点击复制链接
+function copyJobLink() {
+  const link = document.getElementById('jobLinkBox').textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(link).then(() => {
+      document.getElementById('jobLinkBox').textContent = '✅ 链接已复制！';
+      setTimeout(() => { document.getElementById('jobLinkBox').textContent = link; }, 2000);
+    });
+  } else {
+    // 兼容处理
+    const el = document.createElement('textarea');
+    el.value = link;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    alert('链接已复制');
+  }
+}
+
+// 发布新岗位
+function publishNew() {
+  resetManagerFlow();
+}
+
+// ===========================
+// 管理员视图 - 渲染表格
+// ===========================
+function renderAdminTable() {
+  // 合并 mock 数据 + localStorage 数据
+  const userJobs = JSON.parse(localStorage.getItem('internRecruitJobs') || '[]');
+  const allJobs = [...MOCK_JOBS, ...userJobs];
+
+  document.getElementById('statTotal').textContent = allJobs.length;
+  document.getElementById('statActive').textContent = allJobs.filter(j => j.status === '招聘中').length;
+
+  const tbody = document.getElementById('adminTableBody');
+  tbody.innerHTML = '';
+
+  if (allJobs.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-sub);padding:32px">暂无岗位数据</td></tr>';
+    return;
+  }
+
+  // 按提交时间倒序
+  allJobs.sort((a, b) => (b.submitTime || '').localeCompare(a.submitTime || ''));
+
+  allJobs.forEach(job => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><b>${escHtml(job.name)}</b></td>
+      <td>${escHtml(job.dept)}</td>
+      <td>${escHtml(job.title)}</td>
+      <td style="white-space:nowrap">${escHtml(job.submitTime || '-')}</td>
+      <td style="white-space:nowrap">${escHtml(job.onboardDate || '-')}</td>
+      <td><span class="status-tag">${escHtml(job.status || '招聘中')}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// 防 XSS
+function escHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>
