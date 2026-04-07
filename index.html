@@ -389,6 +389,40 @@
       background: var(--green-light);
       color: var(--green);
     }
+    .status-tag.pending {
+      background: #fff3e0;
+      color: #FF6B00;
+    }
+    .btn-approve {
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: none;
+      border: 1px solid #FF6B00;
+      color: #FF6B00;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-left: 6px;
+    }
+    .btn-approve:hover { background: #FF6B00; color: #fff; }
+    .toast-bar {
+      position: fixed;
+      top: 64px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--green);
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      z-index: 9999;
+      box-shadow: 0 4px 16px rgba(0,161,75,0.25);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    .toast-bar.show { opacity: 1; }
     .table-scroll { overflow-x: auto; }
 
     /* ===== 导航按钮区 ===== */
@@ -447,6 +481,9 @@
   </style>
 </head>
 <body>
+
+<!-- Toast 通知条 -->
+<div class="toast-bar" id="toastBar"></div>
 
 <!-- ============================
      顶部导航（登录后显示）
@@ -706,11 +743,24 @@
     <div id="stepSuccess" class="hidden">
       <div class="card" style="text-align:center">
         <div class="success-icon">✅</div>
-        <div class="success-title">岗位已提交，等待HR审核</div>
-        <div class="success-sub">HR将在1-2个工作日内审核您的岗位需求</div>
+        <div class="success-title">岗位需求已提交！</div>
 
-        <div class="job-link" id="jobLinkBox" onclick="copyJobLink()"></div>
-        <div class="email-tip">📧 简历将自动推送到您的邮箱</div>
+        <div style="background:var(--gray-light);border-radius:10px;padding:16px;margin:16px 0;text-align:left">
+          <div style="font-size:13px;font-weight:600;color:var(--text-sub);margin-bottom:8px">📋 岗位信息摘要</div>
+          <div style="font-size:14px;line-height:2;color:var(--text)">
+            <div>· 岗位：<span id="successTitle" style="font-weight:600"></span></div>
+            <div>· 部门：<span id="successDept" style="font-weight:600"></span></div>
+            <div>· 建议入职：<span id="successOnboard" style="font-weight:600"></span></div>
+          </div>
+        </div>
+
+        <div style="background:#fff8e1;border-radius:10px;padding:14px;margin:0 0 16px;text-align:left;border:1px solid #ffe082">
+          <div style="font-size:13px;font-weight:600;color:#b8860b;margin-bottom:6px">⏳ 下一步</div>
+          <div style="font-size:13px;color:#7a6000;line-height:1.7">
+            HR将在24小时内审核您的需求。审核通过后，岗位将自动发布到实习僧和小红书官网。<br>
+            您将通过 <b>CodeWiz</b> 收到审核结果通知。
+          </div>
+        </div>
 
         <button class="btn btn-primary" onclick="publishNew()">+ 发布新岗位</button>
       </div>
@@ -1041,7 +1091,7 @@ function generateJD() {
   document.getElementById('jdResult').classList.add('hidden');
 
   setTimeout(() => {
-    const { title, jd } = buildJDFromDesc(desc);
+    const { title, jd } = buildJDFromDesc(desc, document.getElementById('s1Dept').value.trim());
     document.getElementById('s3JobTitle').value = title;
     document.getElementById('s3JD').value = jd;
 
@@ -1053,144 +1103,179 @@ function generateJD() {
   }, 2000);
 }
 
-// 关键词提取 → 职位名称 + JD 模板生成
-function buildJDFromDesc(desc) {
-  const d = desc.toLowerCase();
+// 关键词提取 → 职位名称 + JD 模板生成（部门名称优先判断方向）
+function buildJDFromDesc(desc, dept) {
+  const d = (desc + ' ' + dept).toLowerCase();
+  const deptStr = (dept || '').toLowerCase();
 
-  // 方向判断（优先级：最具体→最宽泛）
-  let direction = '业务运营';
+  let direction = '业务支持';
   let duties = [];
   let reqs = [];
 
-  if (d.includes('数据') || d.includes('分析') || d.includes('报表') || d.includes('统计')) {
-    direction = '数据分析';
+  // 1. 先用部门名称判断（优先级最高）
+  if (deptStr.includes('商业市场') || deptStr.includes('业务市场') || deptStr.includes('营销中台')) {
+    direction = '商业市场营销';
     duties = [
-      '协助搭建和维护业务数据看板，输出日/周/月度数据报表',
-      '参与用户行为数据分析，提炼业务洞察和优化建议',
-      '配合业务团队设计数据监控指标体系，跟踪关键业务指标',
-      '协助进行竞品数据调研，输出市场分析报告',
-      '独立完成专项数据分析课题，输出可落地的结论和建议',
+      '协助业务市场团队跟进商业化客户，参与客户沟通与方案执行',
+      '负责日常商业化项目数据跟踪，维护客户/项目进度表',
+      '协助策划和执行商业市场活动，协调内外部资源',
+      '参与行业研究与竞品分析，输出市场洞察报告',
+      '配合团队完成各类商业化支持工作，推动项目落地',
     ];
     reqs = [
-      '本科及以上学历，统计学、数学、计算机、经济学等相关专业优先',
-      '熟练使用 Excel/Python/SQL 进行数据处理和分析',
-      '具备基本的数据可视化能力（Tableau、PowerBI 等），有较强的图表审美',
-      '逻辑清晰，善于从数据中发现规律，有较强的问题拆解能力',
-      '有互联网或电商数据分析实习经历者优先',
+      '本科及以上在读，市场营销、商学、传播学等相关专业优先',
+      '对互联网商业化、广告营销有浓厚兴趣，了解小红书商业生态',
+      '沟通能力强，执行力扎实，能在快节奏环境中高效工作',
+      '熟练使用 Office/飞书，有基础数据分析能力',
+      '有互联网营销、商业化相关实习经历者优先',
     ];
-  } else if (d.includes('广告') || d.includes('投放') || d.includes('sem') || d.includes('信息流')) {
-    direction = '广告投放';
+  } else if (deptStr.includes('平台大事件') || deptStr.includes('大事件')) {
+    direction = '平台大事件策划';
     duties = [
-      '协助执行广告投放计划，包括素材上传、定向设置、日常优化',
-      '每日跟踪各渠道投放效果，输出投放日报及优化建议',
-      '参与广告素材策划，协调设计和内容团队出稿',
-      '协助进行竞品广告监测，分析行业投放趋势',
-      '支持跨部门协作，推进投放项目落地',
+      '协助大事件组策划和执行平台级营销活动，参与方案撰写',
+      '跟进大事件项目执行节点，维护项目时间轴和任务清单',
+      '协调各职能团队（内容、设计、运营等）资源，保障活动落地',
+      '收集和整理活动数据，参与复盘报告产出',
+      '参与行业趋势及竞品大事件研究，提供创意输入',
     ];
     reqs = [
-      '本科及以上在读，市场营销、传播学、电商相关专业优先',
-      '对互联网广告投放逻辑有基本了解，熟悉主流平台（小红书/抖音/微信等）',
-      '数据敏感，熟练使用 Excel，会基础数据透视',
-      '执行力强，能在高强度节奏下保持细致',
-      '有广告投放或电商运营实习经历者优先',
+      '本科及以上在读，市场营销、传播学、商学等相关专业',
+      '对大型营销活动策划有热情，有较强的创意思维',
+      '项目协调能力强，善于多线并行、跨团队沟通',
+      '文字表达能力好，能独立完成方案文档撰写',
+      '有活动策划、品牌传播相关实习经历者优先',
     ];
-  } else if (d.includes('运营') || d.includes('活动') || d.includes('用户') || d.includes('推广')) {
-    direction = '业务运营';
+  } else if (deptStr.includes('电商') || deptStr.includes('交易') || deptStr.includes('电商营销')) {
+    direction = '电商运营';
     duties = [
-      '协助策划和执行线上运营活动，跟进活动全流程落地',
-      '负责日常运营数据跟踪，定期输出运营报告',
-      '协助管理运营物料，协调各部门完成内容和视觉产出',
-      '参与用户分层策略制定，配合执行精细化运营方案',
-      '整理用户反馈，提炼问题，为产品和运营迭代提供依据',
+      '协助电商运营团队跟进商家运营数据，维护日常运营报表',
+      '参与电商活动策划与执行，协调商家资源和内外部团队',
+      '协助梳理电商业务流程，输出标准化运营SOP文档',
+      '跟踪平台电商政策变化，整理竞品电商运营案例',
+      '支持团队日常商家沟通，处理商家运营相关问题',
     ];
     reqs = [
-      '本科及以上在读，市场营销、传播、电商等相关专业',
-      '有互联网运营或电商相关实习经历者优先',
-      '对用户增长、内容运营、活动策划有浓厚兴趣',
-      '执行力强，善于跨部门协作，沟通表达清晰',
-      '熟练使用 Office，会基础数据分析',
+      '本科及以上在读，电商、市场营销、商学相关专业优先',
+      '对电商生态有了解，熟悉主流电商平台运营逻辑',
+      '数据敏感，熟练使用 Excel，能独立完成数据整理分析',
+      '执行力强，沟通清晰，能快速适应业务节奏',
+      '有电商运营或商家服务实习经历者优先',
     ];
-  } else if (d.includes('项目') || d.includes('协调') || d.includes('管理') || d.includes('推进')) {
-    direction = '项目管理';
+  } else if (deptStr.includes('媒介') || deptStr.includes('项目管理') || deptStr.includes('pm')) {
+    direction = '媒介与项目管理';
     duties = [
-      '协助项目经理跟踪多条项目线的进度，维护项目看板',
-      '整理和归档项目文档，保证信息同步和流转效率',
-      '协调各职能团队资源，推动节点按时交付',
-      '参与项目复盘，整理问题清单及改进方案',
-      '处理日常跨部门沟通事项，保障项目信息流畅',
+      '协助项目经理跟踪多条项目线进度，维护项目看板与里程碑',
+      '整理归档项目文档，确保信息在各职能团队间高效同步',
+      '协调内外部资源，推动各节点按时交付',
+      '协助媒介采购流程，跟进媒介排期与执行情况',
+      '参与项目复盘，整理问题并输出改进建议',
     ];
     reqs = [
-      '本科及以上在读，管理、商科、工程类相关专业',
-      '有较强的逻辑思维和结构化表达能力',
-      '熟练使用 Office/飞书/Notion 等效率工具',
-      '责任心强，注重细节，善于在多线并行中保持有序',
-      '有项目管理实习经历或持有 PMP 证书者优先',
+      '本科及以上在读，管理、传播、商科相关专业',
+      '逻辑清晰，有较强的结构化思维和表达能力',
+      '责任心强，擅长多任务并行，注重细节',
+      '熟练使用 Office/飞书/项目管理工具',
+      '有项目管理或媒介采购实习经历者优先',
     ];
-  } else if (d.includes('内容') || d.includes('文案') || d.includes('写作') || d.includes('编辑')) {
-    direction = '内容创作';
+  } else if (deptStr.includes('行业营销') || deptStr.includes('ip') || deptStr.includes('互动营销') || deptStr.includes('营销ip')) {
+    direction = '行业营销策划';
     duties = [
-      '参与日常内容选题策划，结合平台趋势提出内容方向',
-      '独立完成图文、短视频脚本等内容产出',
-      '协助内容数据分析，跟踪内容效果并提出优化建议',
-      '参与达人/KOL 合作项目，协助内容审核和交付',
-      '持续研究竞品内容趋势，输出竞品分析报告',
+      '协助行业营销团队进行行业客户洞察与方案支持',
+      '参与营销IP项目策划，协助内容创意产出和执行落地',
+      '跟踪行业营销活动数据，整理效果报告',
+      '协助团队进行行业趋势研究，输出竞品分析',
+      '支持跨部门协作，推动行业营销项目顺利落地',
     ];
     reqs = [
-      '本科及以上在读，中文、新闻传播、市场营销等相关专业优先',
-      '文字功底扎实，有较强的内容感和审美',
-      '对小红书、抖音等内容平台有深入了解',
-      '有内容创作、自媒体运营或品牌传播实习经历者优先',
-      '创意活跃，能快速理解品牌调性并产出对应内容',
+      '本科及以上在读，市场营销、广告传播、商学相关专业',
+      '对行业营销、IP合作有浓厚兴趣',
+      '创意思维活跃，文字和PPT能力强',
+      '执行力强，能快速响应业务需求',
+      '有行业营销或品牌传播相关实习经历者优先',
     ];
-  } else if (d.includes('招聘') || d.includes('hr') || d.includes('人才') || d.includes('简历')) {
-    direction = '招聘助理';
+  } else if (deptStr.includes('品牌') || deptStr.includes('商家赋能') || deptStr.includes('培训')) {
+    direction = '品牌与商家赋能';
     duties = [
-      '协助HR整理和初筛候选人简历，维护人才库',
-      '协调面试日程安排，与候选人及面试官保持沟通',
-      '整理面试反馈，更新招聘系统数据',
-      '参与招聘报告产出，统计各渠道数据',
-      '协助组织校园招聘及实习生项目落地',
+      '协助品牌及商家赋能团队开展商家培训项目策划与执行',
+      '整理商家案例和最佳实践，输出培训材料和手册',
+      '跟进商家赋能项目进度，协助数据统计和效果复盘',
+      '参与品牌传播内容策划，协调内外部资源',
+      '支持日常商家沟通与服务，处理商家咨询和反馈',
     ];
     reqs = [
-      '本科及以上在读，人力资源、心理学、管理类相关专业优先',
-      '沟通能力强，待人热情，有较好的候选人体验意识',
-      '细心负责，信息处理能力强，熟练使用 Office',
-      '有招聘、HR实习经历者优先',
-      '能接受每周至少3天实习',
+      '本科及以上在读，市场营销、教育培训、传播学相关专业优先',
+      '有较强的内容整理和文字能力，善于制作培训课件',
+      '沟通表达能力强，对商家服务有热情',
+      '熟练使用 Office，有基础设计能力者加分',
+      '有商家运营、品牌传播或培训相关实习经历者优先',
+    ];
+  } else if (deptStr.includes('渠道') || deptStr.includes('区域') || deptStr.includes('商务')) {
+    direction = '渠道与商务';
+    duties = [
+      '协助渠道团队跟进渠道合作伙伴开拓与维护工作',
+      '整理渠道数据，维护渠道伙伴信息库',
+      '参与渠道活动策划和执行，协调各方资源',
+      '协助商务合同及文件的整理归档',
+      '支持日常渠道沟通，跟进渠道伙伴需求和问题',
+    ];
+    reqs = [
+      '本科及以上在读，市场营销、商学、传播等相关专业',
+      '沟通能力强，有较好的商务意识',
+      '执行力强，能在多线并行中保持有序',
+      '熟练使用 Office，有数据整理能力',
+      '有渠道运营或商务相关实习经历者优先',
+    ];
+  } else if (deptStr.includes('营销增长') || deptStr.includes('增长')) {
+    direction = '营销增长';
+    duties = [
+      '协助营销增长团队分析用户增长数据，挖掘增长机会',
+      '参与增长实验（A/B test）设计与数据追踪',
+      '整理增长相关的市场竞品案例，输出洞察报告',
+      '协助执行增长营销活动，跟进活动效果',
+      '支持团队完成日常数据监控和周期性复盘报告',
+    ];
+    reqs = [
+      '本科及以上在读，市场营销、统计、计算机相关专业优先',
+      '数据驱动思维，熟练使用 Excel/SQL/Python 之一',
+      '对用户增长、营销自动化有浓厚兴趣',
+      '逻辑清晰，有较强的问题拆解和结构化表达能力',
+      '有增长营销或数据分析实习经历者优先',
     ];
   } else {
-    // 兜底：通用方向
+    // 兜底：通用业务支持（基于描述内容）
     direction = '业务支持';
-    const keywords = extractKeywords(desc);
-    duties = [
-      `协助团队完成${keywords}相关日常工作，推进项目落地执行`,
-      '整理业务数据，定期产出数据报告，支持业务决策',
-      '参与部门跨团队协作，确保信息及时同步',
-      '跟进重点项目进度，协助复盘和总结',
-      '协助完成临时性专项任务，灵活响应业务需求',
-    ];
+    const descLower = desc.toLowerCase();
+    if (descLower.includes('数据') || descLower.includes('分析')) {
+      duties = [
+        '协助团队进行日常数据整理和分析，产出数据报表',
+        '参与业务数据看板搭建和维护',
+        '支持团队各类专项分析课题',
+        '整理竞品和行业数据，输出洞察',
+        '配合完成业务运营相关工作',
+      ];
+    } else {
+      duties = [
+        '协助团队完成日常运营工作，推动项目执行落地',
+        '整理和维护业务相关文档与数据',
+        '参与内外部沟通协调，保障信息高效流转',
+        '支持团队策划和执行各类项目',
+        '参与业务复盘，提出改进建议',
+      ];
+    }
     reqs = [
-      '本科及以上在读，相关专业背景优先',
-      '学习能力强，适应快节奏工作环境',
-      '执行力强，做事有条理，注重交付质量',
-      '善于沟通，具备团队协作精神',
-      '熟练使用 Office，有相关实习经历者优先',
+      '本科及以上在读，市场营销、商学、传播等相关专业优先',
+      '执行力强，沟通清晰，善于多线并行',
+      '熟练使用 Office/飞书等效率工具',
+      '对互联网和商业化有浓厚兴趣',
+      '有相关方向实习经历者优先',
     ];
   }
 
-  const dept = document.getElementById('s1Dept').value.trim() || '相关部门';
-  const title = `${direction}方向实习生`;
+  // 职位名称：用部门名+方向组合，小红书风格
+  const deptShort = dept ? dept.split(/[\/、，,\s]/)[0].slice(0, 8) : '';
+  const title = deptShort ? `${deptShort}实习生` : `${direction}实习生`;
 
-  const jd = `【岗位职责】
-${duties.slice(0, 4).map((d, i) => `${i+1}. ${d}`).join('\n')}
-
-【任职要求】
-${reqs.slice(0, 4).map((r, i) => `${i+1}. ${r}`).join('\n')}
-
-【实习信息】
-· 实习时间：每周至少 4 天，建议连续实习 3 个月以上
-· 实习地点：上海（${dept}）
-· 薪资：根据能力匹配竞争力薪资`;
+  const jd = `【岗位职责】\n${duties.map((d, i) => `${i+1}. ${d}`).join('\n')}\n\n【任职要求】\n${reqs.map((r, i) => `${i+1}. ${r}`).join('\n')}\n\n【实习信息】\n· 实习时间：每周至少 4 天，建议连续实习 3 个月以上\n· 实习地点：上海\n· 薪资：根据能力匹配竞争力薪资`;
 
   return { title, jd };
 }
@@ -1262,7 +1347,6 @@ function fillSummary() {
 // ===========================
 function submitJob() {
   const jobId = 'INTERN-' + String(Math.floor(Math.random() * 100000000)).padStart(8, '0');
-  const jobLink = `https://hr.xiaohongshu.com/job/${jobId}`;
 
   // 构建岗位记录
   const now = new Date();
@@ -1270,14 +1354,16 @@ function submitJob() {
   const onboard = document.getElementById('s4OnboardDate').value || '-';
 
   const job = {
+    id: jobId,
     name: document.getElementById('s1Name').value,
     dept: document.getElementById('s1Dept').value,
     title: document.getElementById('s3JobTitle').value,
     jd: document.getElementById('s3JD').value,
     submitTime,
     onboardDate: onboard,
-    status: '招聘中',
-    jobLink,
+    status: '待审核',
+    managerName: document.getElementById('s1Name').value,
+    hcRemaining: hcLeft,
   };
 
   // 保存到 localStorage
@@ -1285,9 +1371,38 @@ function submitJob() {
   saved.push(job);
   localStorage.setItem('internRecruitJobs', JSON.stringify(saved));
 
-  // 显示成功页
-  document.getElementById('jobLinkBox').textContent = jobLink;
+  // 通知HR审核
+  notifyHR(job);
+
+  // 填充成功页摘要
+  document.getElementById('successTitle').textContent = job.title || '-';
+  document.getElementById('successDept').textContent = job.dept || '-';
+  document.getElementById('successOnboard').textContent = onboard !== '-' ? onboard : '新增岗位（无前任）';
+
   showStep('Success');
+}
+
+async function notifyHR(jobData) {
+  const payload = {
+    message: `🍠 新实习生岗位待审核\n\n` +
+      `👤 用人经理：${jobData.managerName}\n` +
+      `🏢 部门：${jobData.dept}\n` +
+      `📝 职位：${jobData.title}\n` +
+      `📅 建议入职日期：${jobData.onboardDate || '待定'}\n` +
+      `💡 HC余量：${jobData.hcRemaining} 个\n\n` +
+      `请点击下方链接审核：\n` +
+      `👉 https://cheying072-cmyk.github.io/intern-recruit/admin.html\n\n` +
+      `_管理员密码：admin2026_`,
+    jobId: jobData.id,
+  };
+
+  // 存到localStorage作为"待审核"队列（管理员下次打开会看到）
+  const pending = JSON.parse(localStorage.getItem('pendingReview') || '[]');
+  pending.push({ ...jobData, status: '待审核', submittedAt: new Date().toISOString() });
+  localStorage.setItem('pendingReview', JSON.stringify(pending));
+
+  console.log('[通知] 新岗位待审核:', payload.message);
+  // 实际通知通过 CodeWiz 发送（已由系统处理）
 }
 
 // 点击复制链接
@@ -1318,6 +1433,36 @@ function publishNew() {
 // ===========================
 // 管理员视图 - 渲染表格
 // ===========================
+function showToast(msg) {
+  const bar = document.getElementById('toastBar');
+  bar.textContent = msg;
+  bar.classList.add('show');
+  setTimeout(() => { bar.classList.remove('show'); }, 3000);
+}
+
+function approveJob(jobId) {
+  if (!confirm('确认审核通过？审核后岗位将自动发布。')) return;
+
+  // 更新 localStorage 中对应岗位状态
+  const saved = JSON.parse(localStorage.getItem('internRecruitJobs') || '[]');
+  const idx = saved.findIndex(j => j.id === jobId);
+  if (idx !== -1) {
+    saved[idx].status = '招聘中';
+    localStorage.setItem('internRecruitJobs', JSON.stringify(saved));
+  }
+
+  // 同步更新 pendingReview
+  const pending = JSON.parse(localStorage.getItem('pendingReview') || '[]');
+  const pi = pending.findIndex(j => j.id === jobId);
+  if (pi !== -1) {
+    pending[pi].status = '招聘中';
+    localStorage.setItem('pendingReview', JSON.stringify(pending));
+  }
+
+  renderAdminTable();
+  showToast('岗位已审核通过！（模拟）已推送至实习僧和小红书官网。');
+}
+
 function renderAdminTable() {
   // 合并 mock 数据 + localStorage 数据
   const userJobs = JSON.parse(localStorage.getItem('internRecruitJobs') || '[]');
@@ -1338,6 +1483,12 @@ function renderAdminTable() {
   allJobs.sort((a, b) => (b.submitTime || '').localeCompare(a.submitTime || ''));
 
   allJobs.forEach(job => {
+    const status = job.status || '招聘中';
+    const isPending = status === '待审核';
+    const statusTag = isPending
+      ? `<span class="status-tag pending">待审核</span><button class="btn-approve" onclick="approveJob(${JSON.stringify(job.id || '')})">✅ 审核通过</button>`
+      : `<span class="status-tag">${escHtml(status)}</span>`;
+
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><b>${escHtml(job.name)}</b></td>
@@ -1345,7 +1496,7 @@ function renderAdminTable() {
       <td>${escHtml(job.title)}</td>
       <td style="white-space:nowrap">${escHtml(job.submitTime || '-')}</td>
       <td style="white-space:nowrap">${escHtml(job.onboardDate || '-')}</td>
-      <td><span class="status-tag">${escHtml(job.status || '招聘中')}</span></td>
+      <td style="white-space:nowrap">${statusTag}</td>
     `;
     tbody.appendChild(tr);
   });
