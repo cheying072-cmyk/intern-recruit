@@ -2035,39 +2035,43 @@ async function autoAuditAndPublish(job) {
 }
 
 async function pushJobToGist(job) {
-  // 通过 OpenClaw webhook 触发自动发布（内网直连，无跨域问题）
-  const msg = `[INTERN_JOB_SUBMIT] 新实习生岗位需要发布到HR系统和实习僧，请立即处理：
+  // Step 1: 存到服务器队列（本机 /submit 接口，无跨域）
+  try {
+    const submitResp = await fetch('http://10.40.99.172:18792/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(job)
+    });
+    const submitResult = await submitResp.json();
+    if (submitResult.ok) {
+      console.log('[Submit] 岗位已存入服务器队列，将自动发布');
+      return; // 成功入队就够了，OpenClaw 会自动轮询处理
+    }
+  } catch(e) {
+    console.warn('[Submit] 服务器队列写入失败，降级到 hook:', e.message);
+  }
 
-岗位ID: ${job.id}
-职位名称: ${job.title}
-部门: ${job.dept}
-职位类别: ${job.jobCategory}
-用人经理: ${job.managerName}
-入职日期: ${job.onboardDate}
-JD: ${job.jd}
-
-完整数据: ${JSON.stringify(job)}`;
+  // Step 2: 降级 — 通过 OpenClaw webhook 实时唤醒
+  const msg = '[INTERN_JOB_SUBMIT] ' + JSON.stringify(job);
   try {
     const resp = await fetch(OPENCLAW_HOOK_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + OPENCLAW_HOOK_TOKEN
-      },
-      body: JSON.stringify({ message: msg, sessionKey: 'agent:main:draft:mnoqq64u-djgddc', wakeMode: 'now' })
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENCLAW_HOOK_TOKEN },
+      body: JSON.stringify({ message: msg, wakeMode: 'now' })
     });
     const result = await resp.json();
-    if (result.ok) {
-      console.log('[Hook] 岗位已发送到 OpenClaw，runId:', result.runId);
-    } else {
-      throw new Error(JSON.stringify(result));
-    }
+    if (result.ok) { console.log('[Hook] fallback hook sent, runId:', result.runId); return; }
   } catch(e) {
+    console.warn('[Hook] hook 也失败了:', e.message);
+  }
+
+  // Step 3: 最终降级 — localStorage
+  {
     // 降级：写入 localStorage，等待手动处理
     const pubQueue = JSON.parse(localStorage.getItem('hrPublishQueue') || '[]');
     pubQueue.push(Object.assign({}, job, { queuedAt: Date.now() }));
     localStorage.setItem('hrPublishQueue', JSON.stringify(pubQueue));
-    console.warn('[Hook] 发送失败，已降级到 localStorage:', e.message);
+    console.warn('[Submit] 全部方式失败，已降级到 localStorage');
   }
 }
 
