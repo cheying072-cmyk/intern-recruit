@@ -1629,6 +1629,29 @@ function submitJob() {
   showStep('Success');
 }
 
+// ===========================
+// Hi 消息（ntfy 中继 + localStorage 队列）
+// ===========================
+const HR_EMAIL = 'jiayijie1@xiaohongshu.com';
+const NTFY_TOPIC = 'xhs-intern-recruit-jiayijie1';
+
+async function sendHiNotify(title, body, tags = 'memo,xiaohongshu') {
+  try {
+    await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Title': title,
+        'Priority': 'high',
+        'Tags': tags,
+      },
+      body,
+    });
+  } catch (e) {
+    console.warn('[Hi通知] ntfy 失败:', e.message);
+  }
+}
+
 async function notifyHR(jobData) {
   const notifyText =
     `🍠 新实习生岗位待审核\n\n` +
@@ -1641,27 +1664,34 @@ async function notifyHR(jobData) {
     `👉 https://cheying072-cmyk.github.io/intern-recruit/\n` +
     `（管理员密码：920506）`;
 
-  // 存到localStorage作为"待审核"队列
   const pending = JSON.parse(localStorage.getItem('pendingReview') || '[]');
   pending.push({ ...jobData, status: '待审核', submittedAt: new Date().toISOString() });
   localStorage.setItem('pendingReview', JSON.stringify(pending));
 
-  // 通过 ntfy.sh 推送通知（公网 HTTPS，无需登录）
-  const NTFY_TOPIC = 'xhs-intern-recruit-jiayijie1';
-  try {
-    await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Title': '新实习生岗位待审核',
-        'Priority': 'high',
-        'Tags': 'memo,xiaohongshu',
-      },
-      body: notifyText,
-    });
-  } catch (e) {
-    console.warn('[通知] 推送失败:', e.message);
-  }
+  await sendHiNotify('🍠 新实习生岗位待审核', notifyText);
+}
+
+async function notifyManagerPublished(job) {
+  const msg =
+    `✅ 您的实习生岗位已审核通过并发布！\n\n` +
+    `📝 职位：${job.title}\n` +
+    `🏢 部门：${job.dept}\n` +
+    `📅 建议入职日期：${job.onboardDate || '待定'}\n\n` +
+    `HR 将尽快为您推送候选人简历，有问题随时找车英 😊`;
+
+  const queue = JSON.parse(localStorage.getItem('hiMsgQueue') || '[]');
+  queue.push({ managerName: job.name, message: msg, type: 'job_published',
+    createdAt: new Date().toISOString(), status: 'pending' });
+  localStorage.setItem('hiMsgQueue', JSON.stringify(queue));
+
+  await sendHiNotify(
+    `✅ 岗位已通过：${job.title}`,
+    `需发 Hi 给经理 ${job.name}：\n${msg}`,
+    'white_check_mark,xiaohongshu'
+  );
+}
+
+
 }
 
 // 点击复制链接
@@ -1699,14 +1729,16 @@ function showToast(msg) {
   setTimeout(() => { bar.classList.remove('show'); }, 3000);
 }
 
-function approveJob(jobId) {
-  if (!confirm('确认审核通过？审核后岗位将自动发布。')) return;
+async function approveJob(jobId) {
+  if (!confirm('确认审核通过？\n\n审核后将：\n1. 在后台标记岗位为"招聘中"\n2. 通过 Hi 通知用人经理\n3. 发起岗位发布流程（开发中）')) return;
 
   // 更新 localStorage 中对应岗位状态
   const saved = JSON.parse(localStorage.getItem('internRecruitJobs') || '[]');
   const idx = saved.findIndex(j => j.id === jobId);
+  let approvedJob = null;
   if (idx !== -1) {
     saved[idx].status = '招聘中';
+    approvedJob = saved[idx];
     localStorage.setItem('internRecruitJobs', JSON.stringify(saved));
   }
 
@@ -1715,11 +1747,17 @@ function approveJob(jobId) {
   const pi = pending.findIndex(j => j.id === jobId);
   if (pi !== -1) {
     pending[pi].status = '招聘中';
+    if (!approvedJob) approvedJob = pending[pi];
     localStorage.setItem('pendingReview', JSON.stringify(pending));
   }
 
   renderAdminTable();
-  showToast('岗位已审核通过！（模拟）已推送至实习僧和小红书官网。');
+  showToast('✅ 审核通过！Hi 消息已推送给经理。');
+
+  // 发送 Hi 通知给用人经理
+  if (approvedJob) {
+    await notifyManagerPublished(approvedJob);
+  }
 }
 
 function renderAdminTable() {
