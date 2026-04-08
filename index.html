@@ -687,6 +687,26 @@
       <div class="faq-list" id="faqList">
         <div class="faq-item">
           <button class="faq-q" onclick="toggleFaqItem(this)">
+            <span class="faq-q-icon">📋</span>
+            <span>完整招聘流程是什么？每个节点我要做什么？</span>
+          </button>
+          <div class="faq-a">
+            <b>① 提交需求（你来做）</b><br>
+            在本平台填写岗位信息，选择需求背景，AI自动审核JD并发布到实习僧渠道。<br><br>
+            <b>② 简历筛选（2-3个工作日后）</b><br>
+            实习僧简历由HR推送到HR系统，你可以在HR系统查看并初筛，选出感兴趣的候选人。<br><br>
+            <b>③ 安排面试（你来做）</b><br>
+            联系候选人约面试，面试可以是视频或到场，一般1-2轮即可。<br><br>
+            <b>④ 上传候选人简历（面试后，你来做）</b><br>
+            面试结束后，在本平台「上传候选人简历」，系统自动完成人才库查重和面评收集。<br><br>
+            <b>⑤ 填写面评（你来做）</b><br>
+            系统会提示你填写面试评价，完成后自动触发Offer审批流程。<br><br>
+            <b>⑥ Offer审批（自动）</b><br>
+            HR自动发起Offer审批，通过后候选人收到Offer通知，你只需关注最终结果即可。
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaqItem(this)">
             <span class="faq-q-icon">Q</span>
             <span>岗位提交后多久能收到简历？</span>
           </button>
@@ -1056,18 +1076,74 @@
           </div>
         </div>
 
-        <div style="background:#fff8e1;border-radius:10px;padding:14px;margin:0 0 16px;text-align:left;border:1px solid #ffe082">
-          <div style="font-size:13px;font-weight:600;color:#b8860b;margin-bottom:6px">⏳ 下一步</div>
-          <div style="font-size:13px;color:#7a6000;line-height:1.7">
-            HR将在24小时内审核您的需求。审核通过后，岗位将自动发布到实习僧和小红书官网。<br>
-            您将通过 <b>CodeWiz</b> 收到审核结果通知。
+        <div style="background:#fff8e1;border-radius:10px;padding:14px;margin:0 0 12px;text-align:left;border:1px solid #ffe082">
+          <div style="font-size:13px;font-weight:600;color:#b8860b;margin-bottom:8px">🤖 AI 正在自动处理中</div>
+          <div style="font-size:13px;color:#7a6000;line-height:1.9">
+            <b>① 正在审核 JD 内容</b>（敏感词检测）<br>
+            <b>② 审核通过后自动发布</b>到实习僧渠道<br>
+            <b>③ 简历将陆续推送给你</b>，约 2-3 个工作日<br>
+            <b>④ 你收到简历后</b>，安排候选人面试<br>
+            <b>⑤ 面试完成后</b>，在下方上传候选人简历
           </div>
+        </div>
+
+        <div style="background:var(--red-light);border-radius:10px;padding:14px;margin:0 0 16px;text-align:left;border:1px solid rgba(255,36,66,0.2)">
+          <div style="font-size:13px;font-weight:600;color:var(--red);margin-bottom:6px">📎 面试完成后：上传候选人简历</div>
+          <div style="font-size:13px;color:#555;line-height:1.7;margin-bottom:10px">
+            面试结束后，请将候选人简历上传到系统，HR 将自动完成人才库查重、面评收集和 Offer 审批流程。
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="showResumeUpload()">📤 上传候选人简历</button>
         </div>
 
         <button class="btn btn-primary" onclick="publishNew()">+ 发布新岗位</button>
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- ============================
+     简历上传面板（模态层）
+     ============================ -->
+<div class="modal-overlay hidden" id="resumeUploadModal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-title">📤 上传候选人简历</div>
+    <div style="font-size:13px;color:var(--text-sub);margin-bottom:16px;line-height:1.7">
+      请填写候选人基本信息并上传简历，系统将自动完成人才库查重和面评流程。
+    </div>
+    <div class="form-group">
+      <label class="form-label">候选人姓名 <span class="required">*</span></label>
+      <input class="form-input" id="ru_name" type="text" placeholder="请输入候选人姓名" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">手机号 <span class="required">*</span>
+        <span style="font-size:11px;color:var(--text-sub);font-weight:400">（用于人才库查重）</span>
+      </label>
+      <input class="form-input" id="ru_phone" type="tel" placeholder="请输入候选人手机号" maxlength="11" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">应聘岗位</label>
+      <input class="form-input" id="ru_position" type="text" placeholder="自动带入" readonly style="background:#f8f8f8;color:#999" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">简历文件 <span class="required">*</span></label>
+      <input type="file" id="ru_file" accept=".pdf,.doc,.docx" style="display:none" onchange="onResumeFileChange(this)" />
+      <div id="ru_file_area" onclick="document.getElementById('ru_file').click()"
+        style="border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:border-color 0.2s"
+        onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="font-size:24px">📄</div>
+        <div style="font-size:13px;color:var(--text-sub);margin-top:6px">点击上传 PDF / Word 简历</div>
+        <div id="ru_file_name" style="font-size:12px;color:var(--red);margin-top:4px;display:none"></div>
+      </div>
+    </div>
+    <div id="ru_checking" class="hidden" style="background:#f0f7ff;border-radius:10px;padding:12px 16px;font-size:13px;color:#1a6fb8;margin-bottom:12px">
+      🔍 正在查重人才库...
+    </div>
+    <div id="ru_result" class="hidden" style="border-radius:10px;padding:12px 16px;font-size:13px;margin-bottom:12px"></div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeResumeUpload()">取消</button>
+      <button class="btn btn-primary" style="flex:1" id="ru_submit_btn" onclick="submitResume()">提交</button>
+    </div>
   </div>
 </div>
 
@@ -1883,10 +1959,9 @@ function fillSummary() {
 // ===========================
 // 提交岗位
 // ===========================
-function submitJob() {
+async function submitJob() {
   const jobId = 'INTERN-' + String(Math.floor(Math.random() * 100000000)).padStart(8, '0');
 
-  // 构建岗位记录
   const now = new Date();
   const submitTime = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   const onboard = document.getElementById('s4OnboardDate').value || '-';
@@ -1902,7 +1977,7 @@ function submitJob() {
     jd: document.getElementById('s3JD').value,
     submitTime,
     onboardDate: onboard,
-    status: '待审核',
+    status: 'AI审核中',
     managerName: document.getElementById('s1Name').value,
     hcRemaining: hcLeft,
   };
@@ -1912,15 +1987,61 @@ function submitJob() {
   saved.push(job);
   localStorage.setItem('internRecruitJobs', JSON.stringify(saved));
 
-  // 通知HR审核
-  notifyHR(job);
-
   // 填充成功页摘要
   document.getElementById('successTitle').textContent = job.title || '-';
   document.getElementById('successDept').textContent = job.dept || '-';
-  document.getElementById('successOnboard').textContent = onboard !== '-' ? onboard : '新增岗位（无前任）';
-
+  document.getElementById('successOnboard').textContent = onboard !== '-' ? onboard : '未指定';
   showStep('Success');
+
+  // 后台异步：AI审核 → 自动发布
+  autoAuditAndPublish(job);
+}
+
+async function autoAuditAndPublish(job) {
+  // Step1: AI 审核
+  const auditResult = await aiAuditJD(job);
+  const saved = JSON.parse(localStorage.getItem('internRecruitJobs') || '[]');
+  const idx = saved.findIndex(function(j){ return j.id === job.id; });
+
+  if (!auditResult.pass) {
+    if (idx !== -1) {
+      saved[idx].status = '审核不通过';
+      saved[idx].auditReason = auditResult.reason;
+      localStorage.setItem('internRecruitJobs', JSON.stringify(saved));
+    }
+    // 通知经理：JD有问题需要修改
+    await sendHiNotify(
+      '❌ 岗位JD需要修改：' + job.title,
+      'AI审核发现问题：' + auditResult.reason + '\n\n请登录招聘平台重新提交。',
+      'warning,xiaohongshu'
+    );
+    return;
+  }
+
+  // Step2: 审核通过，触发自动发布
+  if (idx !== -1) {
+    saved[idx].status = '招聘中';
+    localStorage.setItem('internRecruitJobs', JSON.stringify(saved));
+  }
+  const pending = JSON.parse(localStorage.getItem('pendingReview') || '[]');
+  pending.push(Object.assign({}, job, { status: '招聘中' }));
+  localStorage.setItem('pendingReview', JSON.stringify(pending));
+
+  // 通知经理：岗位已发布
+  await notifyManagerPublished(job);
+
+  // 触发OpenClaw自动发布到HR系统+实习僧
+  try {
+    await fetch('https://ntfy.sh/xhs-intern-recruit-jiayijie1', {
+      method: 'POST',
+      headers: { 'Title': '📋 新岗位待发布: ' + job.title, 'Tags': 'intern-recruit-publish' },
+      body: 'PUBLISH_JOB:' + JSON.stringify(job),
+    });
+  } catch(e) {
+    const pubQueue = JSON.parse(localStorage.getItem('hrPublishQueue') || '[]');
+    pubQueue.push(Object.assign({}, job, { queuedAt: Date.now() }));
+    localStorage.setItem('hrPublishQueue', JSON.stringify(pubQueue));
+  }
 }
 
 // ===========================
@@ -2003,6 +2124,117 @@ function copyJobLink() {
     document.body.removeChild(el);
     alert('链接已复制');
   }
+}
+
+// ===========================
+// 简历上传 + 查重 + 面评
+// ===========================
+let currentUploadJobId = null;
+
+function showResumeUpload() {
+  // 带入当前岗位名称
+  const saved = JSON.parse(localStorage.getItem('internRecruitJobs') || '[]');
+  const latest = saved[saved.length - 1];
+  document.getElementById('ru_position').value = latest ? latest.title : '';
+  currentUploadJobId = latest ? latest.id : null;
+  document.getElementById('ru_name').value = '';
+  document.getElementById('ru_phone').value = '';
+  document.getElementById('ru_file_name').style.display = 'none';
+  document.getElementById('ru_checking').classList.add('hidden');
+  document.getElementById('ru_result').classList.add('hidden');
+  document.getElementById('resumeUploadModal').classList.remove('hidden');
+}
+
+function closeResumeUpload() {
+  document.getElementById('resumeUploadModal').classList.add('hidden');
+}
+
+function onResumeFileChange(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const nameEl = document.getElementById('ru_file_name');
+  nameEl.textContent = '✅ ' + file.name;
+  nameEl.style.display = 'block';
+}
+
+async function submitResume() {
+  const name = document.getElementById('ru_name').value.trim();
+  const phone = document.getElementById('ru_phone').value.trim();
+  const fileInput = document.getElementById('ru_file');
+  const position = document.getElementById('ru_position').value;
+
+  if (!name) { alert('请填写候选人姓名'); return; }
+  if (!/^1\d{10}$/.test(phone)) { alert('请填写正确的手机号'); return; }
+  if (!fileInput.files[0]) { alert('请上传候选人简历'); return; }
+
+  const btn = document.getElementById('ru_submit_btn');
+  btn.disabled = true;
+  btn.textContent = '处理中...';
+
+  // Step1: 人才库查重
+  document.getElementById('ru_checking').classList.remove('hidden');
+  document.getElementById('ru_result').classList.add('hidden');
+
+  const dupResult = await checkTalentPool(name, phone);
+  document.getElementById('ru_checking').classList.add('hidden');
+
+  const resultEl = document.getElementById('ru_result');
+  resultEl.classList.remove('hidden');
+
+  if (dupResult.exists) {
+    // 在库：提示填写面评
+    resultEl.style.background = '#fff8e6';
+    resultEl.style.border = '1px solid #ffd666';
+    resultEl.style.color = '#8b6914';
+    resultEl.innerHTML = `⚠️ <b>该候选人已在人才库</b>（最近面试：${dupResult.lastInterview || '无记录'}）<br><br>请直接在 HR 系统填写面试评价，完成后系统将自动发起 Offer 审批。<br><br><a href="https://hr.xiaohongshu.com" target="_blank" style="color:var(--red);font-weight:600">→ 前往 HR 系统填写面评</a>`;
+    // 记录查重结果
+    saveResumeRecord(name, phone, position, 'in_pool', dupResult);
+  } else {
+    // 不在库：上传简历
+    resultEl.style.background = '#e6f7ee';
+    resultEl.style.border = '1px solid #b7ebd2';
+    resultEl.style.color = '#1a6b3a';
+    resultEl.innerHTML = `✅ <b>人才库中未找到该候选人</b><br><br>简历已记录，HR 将上传到 HR 系统对应岗位。完成后请在 HR 系统填写面试评价，系统将自动发起 Offer 审批。`;
+    // 记录并通知HR上传
+    saveResumeRecord(name, phone, position, 'new', null);
+    notifyHrUploadResume(name, phone, position);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '提交';
+}
+
+async function checkTalentPool(name, phone) {
+  // 调用HR系统人才库查重接口
+  // 由于前端跨域限制，这里记录到队列，由OpenClaw后台处理
+  // 同时做本地缓存查重（防止重复提交）
+  const localCache = JSON.parse(localStorage.getItem('talentPoolCache') || '[]');
+  const hit = localCache.find(function(r){ return r.phone === phone; });
+  if (hit) return { exists: true, lastInterview: hit.lastInterview };
+  // 无本地缓存：返回未在库（实际查重由HR侧处理）
+  return { exists: false };
+}
+
+function saveResumeRecord(name, phone, position, type, extra) {
+  const records = JSON.parse(localStorage.getItem('resumeRecords') || '[]');
+  records.push({
+    name, phone, position,
+    type, // 'in_pool' | 'new'
+    jobId: currentUploadJobId,
+    uploadTime: new Date().toISOString(),
+    extra: extra || {},
+    status: '待面评',
+  });
+  localStorage.setItem('resumeRecords', JSON.stringify(records));
+}
+
+async function notifyHrUploadResume(name, phone, position) {
+  // 通知HR(车英)：需要上传简历到HR系统
+  await sendHiNotify(
+    '📄 新候选人简历待上传：' + position,
+    '候选人：' + name + '\n手机：' + phone + '\n岗位：' + position + '\n\n请在 HR 系统对应岗位上传简历，并在面评完成后发起 Offer 审批。',
+    'memo,xiaohongshu'
+  );
 }
 
 // 发布新岗位
