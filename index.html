@@ -2030,17 +2030,44 @@ async function autoAuditAndPublish(job) {
   // 通知经理：岗位已发布
   await notifyManagerPublished(job);
 
-  // 触发OpenClaw自动发布到HR系统+实习僧
+  // 触发OpenClaw自动发布：写入 GitHub Gist 队列
+  await pushJobToGist(job);
+}
+
+async function pushJobToGist(job) {
+  // 通过 OpenClaw webhook 触发自动发布（内网直连，无跨域问题）
+  const msg = `[INTERN_JOB_SUBMIT] 新实习生岗位需要发布到HR系统和实习僧，请立即处理：
+
+岗位ID: ${job.id}
+职位名称: ${job.title}
+部门: ${job.dept}
+职位类别: ${job.jobCategory}
+用人经理: ${job.managerName}
+入职日期: ${job.onboardDate}
+JD: ${job.jd}
+
+完整数据: ${JSON.stringify(job)}`;
   try {
-    await fetch('https://ntfy.sh/xhs-intern-recruit-jiayijie1', {
+    const resp = await fetch(OPENCLAW_HOOK_URL, {
       method: 'POST',
-      headers: { 'Title': '📋 新岗位待发布: ' + job.title, 'Tags': 'intern-recruit-publish' },
-      body: 'PUBLISH_JOB:' + JSON.stringify(job),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + OPENCLAW_HOOK_TOKEN
+      },
+      body: JSON.stringify({ message: msg })
     });
+    const result = await resp.json();
+    if (result.ok) {
+      console.log('[Hook] 岗位已发送到 OpenClaw，runId:', result.runId);
+    } else {
+      throw new Error(JSON.stringify(result));
+    }
   } catch(e) {
+    // 降级：写入 localStorage，等待手动处理
     const pubQueue = JSON.parse(localStorage.getItem('hrPublishQueue') || '[]');
     pubQueue.push(Object.assign({}, job, { queuedAt: Date.now() }));
     localStorage.setItem('hrPublishQueue', JSON.stringify(pubQueue));
+    console.warn('[Hook] 发送失败，已降级到 localStorage:', e.message);
   }
 }
 
@@ -2049,6 +2076,9 @@ async function autoAuditAndPublish(job) {
 // ===========================
 const HR_EMAIL = 'jiayijie1@xiaohongshu.com';
 const NTFY_TOPIC = 'xhs-intern-recruit-jiayijie1';
+const GIST_ID = '67876cc5346aef6aac3b85da9ec3d978';
+const OPENCLAW_HOOK_URL = 'http://10.40.99.172:18789/hooks/agent';
+const OPENCLAW_HOOK_TOKEN = '12ff8290e53ba22738a351cb2998d734';
 
 async function sendHiNotify(title, body, tags = 'memo,xiaohongshu') {
   try {
@@ -2283,11 +2313,7 @@ async function approveJob(jobId) {
 
   showToast('⏳ 审核通过！正在触发自动发布...');
   try {
-    await fetch('https://ntfy.sh/xhs-intern-recruit-jiayijie1', {
-      method: 'POST',
-      headers: { 'Title': '📋 新岗位待发布: ' + job.title, 'Tags': 'intern-recruit-publish' },
-      body: 'PUBLISH_JOB:' + JSON.stringify(job),
-    });
+    await pushJobToGist(job);
     showToast('✅ 审核通过！HR 系统正在自动发布，约1分钟完成。');
   } catch(e) {
     const pubQueue = JSON.parse(localStorage.getItem('hrPublishQueue') || '[]');
