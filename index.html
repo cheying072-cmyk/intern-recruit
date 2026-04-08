@@ -2070,7 +2070,7 @@ async function pushJobToGist(job) {
 
   // Step 2: 内网 submit 接口（若内网可达）
   try {
-    const submitResp = await fetch('http://10.40.99.172:18792/submit', {
+    const submitResp = await fetch('http://10.40.85.248:18792/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(job)
@@ -2131,7 +2131,7 @@ async function pushJobToGist(job) {
 const HR_EMAIL = 'jiayijie1@xiaohongshu.com';
 const NTFY_TOPIC = 'xhs-intern-recruit-jiayijie1';
 const GIST_ID = '67876cc5346aef6aac3b85da9ec3d978';
-const OPENCLAW_HOOK_URL = 'http://10.40.99.172:18792/hooks/agent';
+const OPENCLAW_HOOK_URL = 'http://10.40.85.248:18792/hooks/agent';
 const OPENCLAW_HOOK_TOKEN = '12ff8290e53ba22738a351cb2998d734';
 // Hi 消息直发配置（前端直接调 Hi API，发消息给 OpenClaw Bot 会话）
 const HI_CHAT_ID = 'CHAT7626022212794930169';
