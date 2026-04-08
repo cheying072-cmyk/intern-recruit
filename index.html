@@ -155,6 +155,41 @@
     .form-textarea { resize: vertical; min-height: 100px; }
     .form-hint { font-size: 12px; color: var(--text-sub); margin-top: 5px; }
 
+    /* ===== 级联部门选择器 ===== */
+    .cascader-wrap { position: relative; }
+    .cascader-input {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 12px 36px 12px 14px; font-size: 15px; font-family: inherit;
+      color: var(--text); background: #fff; cursor: pointer;
+      transition: border-color 0.2s; outline: none; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .cascader-input:focus, .cascader-input.open { border-color: var(--red); box-shadow: 0 0 0 3px rgba(255,36,66,0.08); }
+    .cascader-arrow {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      color: #aaa; font-size: 12px; pointer-events: none; transition: transform 0.2s;
+    }
+    .cascader-input.open + .cascader-arrow { transform: translateY(-50%) rotate(180deg); }
+    .cascader-dropdown {
+      position: absolute; top: calc(100% + 4px); left: 0; z-index: 9999;
+      background: #fff; border: 1px solid #eee; border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12); display: none;
+      flex-direction: row; min-width: 240px; max-height: 340px;
+    }
+    .cascader-dropdown.open { display: flex; }
+    .cascader-col {
+      min-width: 150px; max-width: 220px; overflow-y: auto;
+      border-right: 1px solid #f0f0f0; padding: 6px 0;
+    }
+    .cascader-col:last-child { border-right: none; }
+    .cascader-option {
+      padding: 9px 14px; font-size: 14px; cursor: pointer;
+      display: flex; justify-content: space-between; align-items: center;
+      white-space: nowrap; color: var(--text);
+    }
+    .cascader-option:hover, .cascader-option.active { background: var(--red-light); color: var(--red); }
+    .cascader-option .has-child::after { content: '›'; margin-left: 6px; color: #aaa; font-size: 16px; }
+
     /* ===== 步骤条 ===== */
     .steps {
       display: flex;
@@ -745,7 +780,18 @@
         </div>
         <div class="form-group">
           <label class="form-label">所在部门<span class="required">*</span></label>
-          <input class="form-input" id="s1Dept" type="text" placeholder="例如：电商营销、商业分析..." maxlength="30" />
+          <div class="cascader-wrap" id="deptCascaderWrap">
+            <div class="cascader-input" id="s1DeptDisplay" tabindex="0"
+                 onclick="toggleDeptCascader()" onkeydown="if(event.key==='Enter'||event.key===' ')toggleDeptCascader()"
+                 style="color:#aaa">请选择所在部门</div>
+            <span class="cascader-arrow">▼</span>
+            <input type="hidden" id="s1Dept" />
+            <div class="cascader-dropdown" id="deptDropdown">
+              <div class="cascader-col" id="deptCol0"></div>
+              <div class="cascader-col" id="deptCol1" style="display:none"></div>
+              <div class="cascader-col" id="deptCol2" style="display:none"></div>
+            </div>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">职位类别<span class="required">*</span></label>
@@ -1069,6 +1115,159 @@ const ADMIN_PWD = '920506';
 const TOTAL_HC = 10;
 let jdMode = 'ai'; // 'ai' | 'custom'
 
+// ===========================
+// 部门树数据（同步自HR系统）
+// ===========================
+const DEPT_TREE = {
+  '商业部': {
+    '商业市场营销中台': ['媒介与项目管理','品牌及商家赋能','行业营销二组','娱乐营销','内容运营','行业营销一组','节点营销','用户市场组','互动营销','行业营销三组','平台大事件','行业营销四组','商业市场部','业务培训'],
+    '行业一部': ['平台专家六组','平台专家三组','行业四组','行业七组','行业策略组','行业一组','行业二组','平台专家二组','行业三组','行业十组','行业十一组','平台专家十二组','平台专家十组','平台专家九组','行业九组','行业八组','平台专家四组','行业六组','平台专家八组','平台专家七组','行业十二组','平台专家十一组','平台专家一组','行业五组','平台专家五组'],
+    '行业二部': ['行业一组','行业三组','平台专家三组','行业四组','平台专家一组','平台专家二组','平台专家四组','行业二组','行业六组','行业五组','行业solution','行业七组','行业八组','平台专家五组'],
+    '行业三部': ['行业二组','平台专家四组','行业五组','行业三组','平台专家五组','行业七组','行业一组','平台专家一组','行业策略组','行业六组','行业四组','平台专家三组','平台专家六组','平台专家七组','平台专家二组'],
+    '行业四部': ['行业九组','行业三组','行业四组','平台专家三组','平台专家二组','行业一组','行业二组','行业五组','平台专家五组','行业策略组','行业六组','行业七组','平台专家一组','平台专家七组','平台专家六组','行业八组','平台专家四组','平台专家八组','行业十组','平台专家十组'],
+    '行业五部': ['平台专家一组','行业一组','行业三组','行业四组','平台专家二组','平台专家四组','行业二组','平台专家三组','行业策略组','行业五组','平台专家五组','行业六组','平台专家六组'],
+    '行业六部': ['平台专家三组','行业二组','行业三组','行业一组','行业四组','平台专家一组','行业策略组','平台专家二组','平台专家四组','行业五组'],
+    '行业七部': ['行业策略部','行业一组','行业五组','平台专家四组','平台专家二组','平台专家一组','行业三组','行业二组','行业六组','行业七组','平台专家三组','行业八组','行业九组','行业十组','平台专家五组','行业十一组','平台专家六组','平台专家七组','平台专家八组'],
+    '行业八部': ['行业四组','行业一组','平台专家二组','行业二组','平台专家四组','平台专家三组','行业策略部','行业三组','行业五组','平台专家五组'],
+    '行业九部': ['平台专家组','区域一组'],
+    '商业产品部': [],
+    '生态客户一部': [],
+    '生态客户二部': [],
+    '渠道业务部': ['渠道四组','渠道一组','渠道业务策略','区域渠道组','渠道赋能与商务组','渠道三组','渠道二组','交易服务商组','商业化服务商组'],
+    '商业策略中台': ['激励与伙伴策略--代理&伙伴政策','交易经营与赛道策略','行业经分BP三组','行业经分BP二组','行业经分BP一组','行业经分BP四组','商业化经营与赛道策略','激励与伙伴策略--客户政策','业务运营重构与专项组'],
+    '小红书营销实验室': [],
+    '创作者营销与商业服务': [],
+  },
+  '平台部': {
+    '公关部': [],
+    '公共事务一部': [],
+    '公共事务二部': [],
+    '公共事务三部': [],
+    '公共事务四部': [],
+    '决策支持': [],
+    '企业发展部': [],
+    '项目部': [],
+  },
+  '组织人事部': {},
+  '财务投资部': {},
+  '产品设计部': {},
+  '中台技术部': {},
+  '社区部': {},
+  '业务技术部': {},
+  '交易部': {},
+  '审核平台部': {},
+};
+
+// ===========================
+// 级联部门选择器
+// ===========================
+let deptPath = []; // ['商业部', '行业三部', '行业营销三组']
+
+function initDeptCascader() {
+  const col0 = document.getElementById('deptCol0');
+  col0.innerHTML = '';
+  Object.keys(DEPT_TREE).forEach(l1 => {
+    const hasChild = Object.keys(DEPT_TREE[l1]).length > 0;
+    const opt = document.createElement('div');
+    opt.className = 'cascader-option';
+    opt.innerHTML = hasChild ? `<span>${l1}</span><span class="has-child"></span>` : `<span>${l1}</span>`;
+    opt.onclick = () => selectDeptL1(l1, opt);
+    col0.appendChild(opt);
+  });
+}
+
+function toggleDeptCascader() {
+  const display = document.getElementById('s1DeptDisplay');
+  const dropdown = document.getElementById('deptDropdown');
+  const isOpen = dropdown.classList.contains('open');
+  if (isOpen) {
+    dropdown.classList.remove('open');
+    display.classList.remove('open');
+  } else {
+    dropdown.classList.add('open');
+    display.classList.add('open');
+    initDeptCascader();
+  }
+}
+
+function closeDeptCascader() {
+  document.getElementById('deptDropdown').classList.remove('open');
+  document.getElementById('s1DeptDisplay').classList.remove('open');
+}
+
+function selectDeptL1(l1, clickedOpt) {
+  deptPath = [l1];
+  document.querySelectorAll('#deptCol0 .cascader-option').forEach(o => o.classList.remove('active'));
+  clickedOpt.classList.add('active');
+  const col1 = document.getElementById('deptCol1');
+  const col2 = document.getElementById('deptCol2');
+  col2.style.display = 'none';
+  col2.innerHTML = '';
+  const L2 = DEPT_TREE[l1];
+  const L2keys = Object.keys(L2);
+  if (L2keys.length === 0) {
+    col1.style.display = 'none';
+    commitDept();
+    return;
+  }
+  col1.style.display = '';
+  col1.innerHTML = '';
+  L2keys.forEach(l2 => {
+    const hasChild = Array.isArray(L2[l2]) && L2[l2].length > 0;
+    const opt = document.createElement('div');
+    opt.className = 'cascader-option';
+    opt.innerHTML = hasChild ? `<span>${l2}</span><span class="has-child"></span>` : `<span>${l2}</span>`;
+    opt.onclick = () => selectDeptL2(l1, l2, opt);
+    col1.appendChild(opt);
+  });
+}
+
+function selectDeptL2(l1, l2, clickedOpt) {
+  deptPath = [l1, l2];
+  document.querySelectorAll('#deptCol1 .cascader-option').forEach(o => o.classList.remove('active'));
+  clickedOpt.classList.add('active');
+  const col2 = document.getElementById('deptCol2');
+  const L3 = DEPT_TREE[l1][l2];
+  if (!L3 || L3.length === 0) {
+    col2.style.display = 'none';
+    commitDept();
+    return;
+  }
+  col2.style.display = '';
+  col2.innerHTML = '';
+  L3.forEach(l3 => {
+    const opt = document.createElement('div');
+    opt.className = 'cascader-option';
+    opt.textContent = l3;
+    opt.onclick = () => selectDeptL3(l1, l2, l3, opt);
+    col2.appendChild(opt);
+  });
+}
+
+function selectDeptL3(l1, l2, l3, clickedOpt) {
+  deptPath = [l1, l2, l3];
+  document.querySelectorAll('#deptCol2 .cascader-option').forEach(o => o.classList.remove('active'));
+  clickedOpt.classList.add('active');
+  commitDept();
+}
+
+function commitDept() {
+  const display = document.getElementById('s1DeptDisplay');
+  const hidden = document.getElementById('s1Dept');
+  const label = deptPath.join(' / ');
+  display.textContent = label;
+  display.style.color = '';
+  hidden.value = label;
+  closeDeptCascader();
+}
+
+// 点外部关闭级联
+document.addEventListener('click', (e) => {
+  if (!document.getElementById('deptCascaderWrap')?.contains(e.target)) {
+    closeDeptCascader();
+  }
+});
+
 // Mock：管理员预置5条岗位数据
 const MOCK_JOBS = [
   { name: '木吒', dept: '业务市场一组', title: '商业分析实习生', submitTime: '2026-04-01', onboardDate: '2026-04-15', status: '招聘中' },
@@ -1208,6 +1407,9 @@ function resetManagerFlow() {
   // 清空表单
   document.getElementById('s1Name').value = currentUser;
   document.getElementById('s1Dept').value = '';
+  document.getElementById('s1DeptDisplay').textContent = '请选择所在部门';
+  document.getElementById('s1DeptDisplay').style.color = '#aaa';
+  deptPath = [];
   document.getElementById('s1JobCategory').value = '';
   document.getElementById('s1Desc').value = '';
   document.getElementById('s3JobTitle').value = '';
@@ -1293,7 +1495,7 @@ function validateStep(step) {
     const dept = document.getElementById('s1Dept').value.trim();
     const cat = document.getElementById('s1JobCategory').value;
     const desc = document.getElementById('s1Desc').value.trim();
-    if (!dept) { alert('请填写所在部门'); return false; }
+    if (!dept) { alert('请选择所在部门'); return false; }
     if (!cat) { alert('请选择职位类别'); return false; }
     if (!desc) { alert('请描述实习生的工作内容'); return false; }
   }
@@ -1778,7 +1980,7 @@ function showToast(msg) {
 }
 
 async function approveJob(jobId) {
-  if (!confirm('确认审核通过？\n\n审核后将：\n1. 在后台标记岗位为"招聘中"\n2. 通过 Hi 通知用人经理\n3. 发起岗位发布流程（开发中）')) return;
+  if (!confirm('确认审核通过？\n\n审核后将：\n1. 在后台标记岗位为"招聘中"\n2. 通过 Hi 通知用人经理\n3. 自动发布到 HR 系统 + 实习僧')) return;
 
   // 更新 localStorage 中对应岗位状态
   const saved = JSON.parse(localStorage.getItem('internRecruitJobs') || '[]');
@@ -1800,11 +2002,16 @@ async function approveJob(jobId) {
   }
 
   renderAdminTable();
-  showToast('✅ 审核通过！Hi 消息已推送给经理。');
 
-  // 发送 Hi 通知给用人经理
   if (approvedJob) {
+    // 并发：通知经理 + 触发 OpenClaw 发布
+    showToast('⏳ 审核通过，正在发布到 HR 系统...');
     await notifyManagerPublished(approvedJob);
+    // 写入发布队列，由 OpenClaw 后台消费
+    const pubQueue = JSON.parse(localStorage.getItem('hrPublishQueue') || '[]');
+    pubQueue.push({ ...approvedJob, queuedAt: Date.now() });
+    localStorage.setItem('hrPublishQueue', JSON.stringify(pubQueue));
+    showToast('✅ 审核通过！Hi 通知已发送，HR 系统发布任务已提交，稍后在系统中查看。');
   }
 }
 
