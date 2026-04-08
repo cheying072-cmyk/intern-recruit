@@ -1980,9 +1980,9 @@ function showToast(msg) {
 }
 
 async function approveJob(jobId) {
-  if (!confirm('确认审核通过？\n\n审核后将：\n1. 在后台标记岗位为"招聘中"\n2. 通过 Hi 通知用人经理\n3. 自动发布到 HR 系统 + 实习僧')) return;
+  if (!confirm('确认审核通过？\n\n审核后将自动：\n1. 标记岗位为"招聘中"\n2. Hi 通知用人经理\n3. 发布到 HR 系统\n4. 发布到实习僧')) return;
 
-  // 更新 localStorage 中对应岗位状态
+  // 更新 localStorage 状态
   const saved = JSON.parse(localStorage.getItem('internRecruitJobs') || '[]');
   const idx = saved.findIndex(j => j.id === jobId);
   let approvedJob = null;
@@ -1991,8 +1991,6 @@ async function approveJob(jobId) {
     approvedJob = saved[idx];
     localStorage.setItem('internRecruitJobs', JSON.stringify(saved));
   }
-
-  // 同步更新 pendingReview
   const pending = JSON.parse(localStorage.getItem('pendingReview') || '[]');
   const pi = pending.findIndex(j => j.id === jobId);
   if (pi !== -1) {
@@ -2000,18 +1998,35 @@ async function approveJob(jobId) {
     if (!approvedJob) approvedJob = pending[pi];
     localStorage.setItem('pendingReview', JSON.stringify(pending));
   }
-
   renderAdminTable();
 
-  if (approvedJob) {
-    // 并发：通知经理 + 触发 OpenClaw 发布
-    showToast('⏳ 审核通过，正在发布到 HR 系统...');
-    await notifyManagerPublished(approvedJob);
-    // 写入发布队列，由 OpenClaw 后台消费
+  if (!approvedJob) return;
+
+  // 通知经理
+  await notifyManagerPublished(approvedJob);
+
+  // 🚀 触发 OpenClaw 自动发布：推送带 job 数据的 ntfy 消息
+  // OpenClaw 订阅这个 topic，收到后自动跑浏览器发布
+  showToast('⏳ 审核通过！正在触发自动发布...');
+  try {
+    const jobPayload = JSON.stringify(approvedJob);
+    await fetch('https://ntfy.sh/xhs-intern-recruit-jiayijie1', {
+      method: 'POST',
+      headers: {
+        'Title': `📋 新岗位待发布: ${approvedJob.title}`,
+        'Tags': 'intern-recruit-publish',
+        'X-Job-Data': jobPayload,
+        'Content-Type': 'text/plain',
+      },
+      body: `PUBLISH_JOB:${jobPayload}`,
+    });
+    showToast('✅ 已触发自动发布！OpenClaw 正在操作 HR 系统，约1分钟内完成。');
+  } catch (e) {
+    // 降级：写入 localStorage 队列
     const pubQueue = JSON.parse(localStorage.getItem('hrPublishQueue') || '[]');
     pubQueue.push({ ...approvedJob, queuedAt: Date.now() });
     localStorage.setItem('hrPublishQueue', JSON.stringify(pubQueue));
-    showToast('✅ 审核通过！Hi 通知已发送，HR 系统发布任务已提交，稍后在系统中查看。');
+    showToast('✅ 审核通过！发布任务已入队，稍后 OpenClaw 会自动处理。');
   }
 }
 
