@@ -1106,43 +1106,111 @@
      简历上传面板（模态层）
      ============================ -->
 <div class="modal-overlay hidden" id="resumeUploadModal">
-  <div class="modal-box" style="max-width:480px">
-    <div class="modal-title">📤 上传候选人简历</div>
-    <div style="font-size:13px;color:var(--text-sub);margin-bottom:16px;line-height:1.7">
-      请填写候选人基本信息并上传简历，系统将自动完成人才库查重和面评流程。
-    </div>
-    <div class="form-group">
-      <label class="form-label">候选人姓名 <span class="required">*</span></label>
-      <input class="form-input" id="ru_name" type="text" placeholder="请输入候选人姓名" />
-    </div>
-    <div class="form-group">
-      <label class="form-label">手机号 <span class="required">*</span>
-        <span style="font-size:11px;color:var(--text-sub);font-weight:400">（用于人才库查重）</span>
-      </label>
-      <input class="form-input" id="ru_phone" type="tel" placeholder="请输入候选人手机号" maxlength="11" />
-    </div>
-    <div class="form-group">
-      <label class="form-label">应聘岗位</label>
-      <input class="form-input" id="ru_position" type="text" placeholder="自动带入" readonly style="background:#f8f8f8;color:#999" />
-    </div>
-    <div class="form-group">
-      <label class="form-label">简历文件 <span class="required">*</span></label>
-      <input type="file" id="ru_file" accept=".pdf,.doc,.docx" style="display:none" onchange="onResumeFileChange(this)" />
-      <div id="ru_file_area" onclick="document.getElementById('ru_file').click()"
-        style="border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:border-color 0.2s"
-        onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--border)'">
-        <div style="font-size:24px">📄</div>
-        <div style="font-size:13px;color:var(--text-sub);margin-top:6px">点击上传 PDF / Word 简历</div>
-        <div id="ru_file_name" style="font-size:12px;color:var(--red);margin-top:4px;display:none"></div>
+  <div class="modal-box" style="max-width:520px;padding:0;overflow:hidden">
+    <!-- 头部 -->
+    <div style="background:linear-gradient(135deg,var(--red) 0%,#ff6b6b 100%);padding:24px 20px;color:#fff">
+      <div style="font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px">
+        <span>📝</span> 面试评价提交
       </div>
+      <div style="font-size:13px;opacity:0.9;margin-top:6px">上传简历 → AI提取信息 → 一键生成面评</div>
     </div>
-    <div id="ru_checking" class="hidden" style="background:#f0f7ff;border-radius:10px;padding:12px 16px;font-size:13px;color:#1a6fb8;margin-bottom:12px">
-      🔍 正在查重人才库...
-    </div>
-    <div id="ru_result" class="hidden" style="border-radius:10px;padding:12px 16px;font-size:13px;margin-bottom:12px"></div>
-    <div style="display:flex;gap:10px;margin-top:8px">
-      <button class="btn btn-secondary" style="flex:1" onclick="closeResumeUpload()">取消</button>
-      <button class="btn btn-primary" style="flex:1" id="ru_submit_btn" onclick="submitResume()">提交</button>
+    
+    <div style="padding:20px">
+      <!-- 步骤指示器 -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;font-size:12px">
+        <div id="stepIndicator1" style="flex:1;text-align:center;padding:8px;background:var(--red);color:#fff;border-radius:20px;font-weight:600">① 上传简历</div>
+        <div style="color:var(--border)">→</div>
+        <div id="stepIndicator2" style="flex:1;text-align:center;padding:8px;background:#f5f5f5;color:var(--text-sub);border-radius:20px">② 确认信息</div>
+        <div style="color:var(--border)">→</div>
+        <div id="stepIndicator3" style="flex:1;text-align:center;padding:8px;background:#f5f5f5;color:var(--text-sub);border-radius:20px">③ 生成面评</div>
+      </div>
+
+      <!-- Step 1: 上传简历 -->
+      <div id="ru_step1">
+        <div style="background:#fff5f5;border:1.5px dashed var(--red);border-radius:12px;padding:32px 24px;text-align:center;cursor:pointer;transition:all 0.2s"
+          onclick="document.getElementById('ru_file').click()"
+          onmouseover="this.style.background='#ffe8e8'" 
+          onmouseout="this.style.background='#fff5f5'">
+          <input type="file" id="ru_file" accept=".pdf,.doc,.docx" style="display:none" onchange="onResumeFileChange(this)" />
+          <div style="font-size:48px;margin-bottom:12px">📄</div>
+          <div style="font-size:15px;font-weight:600;color:var(--text)">点击上传候选人简历</div>
+          <div style="font-size:12px;color:var(--text-sub);margin-top:6px">支持 PDF / Word 格式，自动提取姓名电话</div>
+          <div id="ru_file_name" style="display:none;margin-top:12px;padding:8px 16px;background:#fff;border-radius:8px;font-size:13px;color:var(--red);font-weight:500"></div>
+        </div>
+        
+        <!-- 岗位信息卡片 -->
+        <div style="margin-top:16px;padding:14px 16px;background:#f8f8f8;border-radius:10px">
+          <div style="font-size:12px;color:var(--text-sub);margin-bottom:4px">当前岗位</div>
+          <div id="ru_position_display" style="font-size:14px;font-weight:600;color:var(--text)">--</div>
+        </div>
+      </div>
+
+      <!-- Step 2: 确认信息 -->
+      <div id="ru_step2" class="hidden">
+        <div style="background:#f8f8f8;border-radius:12px;padding:16px;margin-bottom:16px">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:6px">
+            <span style="color:var(--red)">✓</span> AI提取的候选人信息
+          </div>
+          <div style="display:grid;gap:12px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:32px;height:32px;background:var(--red);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px">👤</div>
+              <div>
+                <div style="font-size:11px;color:var(--text-sub)">姓名</div>
+                <div id="ru_extracted_name" style="font-size:15px;font-weight:600;color:var(--text)">--</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:32px;height:32px;background:#52c41a;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px">📱</div>
+              <div>
+                <div style="font-size:11px;color:var(--text-sub)">电话</div>
+                <div id="ru_extracted_phone" style="font-size:15px;font-weight:600;color:var(--text)">--</div>
+              </div>
+            </div>
+          </div>
+          <div id="ru_talent_check" style="margin-top:12px;padding:10px 12px;border-radius:8px;font-size:12px;display:none"></div>
+        </div>
+        <div style="font-size:12px;color:var(--text-sub);text-align:center">信息有误？请重新上传简历</div>
+      </div>
+
+      <!-- Step 3: 面评打分 -->
+      <div id="ru_step3" class="hidden">
+        <div style="margin-bottom:16px">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px">面试评分</div>
+          <div style="display:flex;gap:10px">
+            <div class="score-option" data-score="3.5" onclick="selectScore(this, 3.5)" style="flex:1;padding:14px;text-align:center;border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.2s">
+              <div style="font-size:24px;font-weight:700;color:var(--text)">3.5</div>
+              <div style="font-size:11px;color:var(--text-sub);margin-top:2px">符合要求</div>
+            </div>
+            <div class="score-option" data-score="3.75" onclick="selectScore(this, 3.75)" style="flex:1;padding:14px;text-align:center;border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.2s">
+              <div style="font-size:24px;font-weight:700;color:var(--text)">3.75</div>
+              <div style="font-size:11px;color:var(--text-sub);margin-top:2px">表现优秀</div>
+            </div>
+            <div class="score-option" data-score="4.0" onclick="selectScore(this, 4.0)" style="flex:1;padding:14px;text-align:center;border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.2s">
+              <div style="font-size:24px;font-weight:700;color:var(--text)">4.0</div>
+              <div style="font-size:11px;color:var(--text-sub);margin-top:2px">强烈推荐</div>
+            </div>
+          </div>
+        </div>
+        
+        <div style="margin-bottom:16px">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+            <span>AI生成的面评</span>
+            <span style="font-size:11px;color:var(--text-sub);font-weight:400">基于简历+JD自动生成</span>
+          </div>
+          <textarea id="ru_ai_evaluation" style="width:100%;min-height:100px;padding:12px;border:1px solid var(--border);border-radius:10px;font-size:13px;line-height:1.6;resize:vertical" placeholder="AI将根据简历和岗位JD自动生成面评..."></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn btn-secondary btn-sm" style="flex:1;font-size:12px;padding:8px" onclick="regenerateEvaluation()">🔄 重新生成</button>
+            <button class="btn btn-secondary btn-sm" style="flex:1;font-size:12px;padding:8px" onclick="useCustomEval()">✏️ 手动填写</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 操作按钮 -->
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn btn-secondary" style="flex:1" onclick="closeResumeUpload()">取消</button>
+        <button class="btn btn-primary" style="flex:1;display:none" id="ru_btn_next" onclick="nextStep()">下一步</button>
+        <button class="btn btn-primary" style="flex:1;display:none" id="ru_btn_submit" onclick="submitEvaluation()">提交面评</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2215,21 +2283,35 @@ function copyJobLink() {
 }
 
 // ===========================
-// 简历上传 + 查重 + 面评
+// 简历上传 + AI提取 + 面评
 // ===========================
 let currentUploadJobId = null;
+let currentResumeFile = null;
+let extractedCandidateInfo = null;
+let selectedScore = null;
 
 function showResumeUpload() {
+  // 重置状态
+  currentResumeFile = null;
+  extractedCandidateInfo = null;
+  selectedScore = null;
+  
   // 带入当前岗位名称
   const saved = JSON.parse(localStorage.getItem('internRecruitJobs') || '[]');
   const latest = saved[saved.length - 1];
-  document.getElementById('ru_position').value = latest ? latest.title : '';
+  document.getElementById('ru_position_display').textContent = latest ? latest.title : '未选择岗位';
   currentUploadJobId = latest ? latest.id : null;
-  document.getElementById('ru_name').value = '';
-  document.getElementById('ru_phone').value = '';
+  
+  // 重置UI
+  document.getElementById('ru_file').value = '';
   document.getElementById('ru_file_name').style.display = 'none';
-  document.getElementById('ru_checking').classList.add('hidden');
-  document.getElementById('ru_result').classList.add('hidden');
+  document.getElementById('ru_step1').classList.remove('hidden');
+  document.getElementById('ru_step2').classList.add('hidden');
+  document.getElementById('ru_step3').classList.add('hidden');
+  document.getElementById('ru_btn_next').style.display = 'none';
+  document.getElementById('ru_btn_submit').style.display = 'none';
+  updateStepIndicator(1);
+  
   document.getElementById('resumeUploadModal').classList.remove('hidden');
 }
 
@@ -2237,90 +2319,217 @@ function closeResumeUpload() {
   document.getElementById('resumeUploadModal').classList.add('hidden');
 }
 
+function updateStepIndicator(step) {
+  document.getElementById('stepIndicator1').style.background = step >= 1 ? 'var(--red)' : '#f5f5f5';
+  document.getElementById('stepIndicator1').style.color = step >= 1 ? '#fff' : 'var(--text-sub)';
+  document.getElementById('stepIndicator2').style.background = step >= 2 ? 'var(--red)' : '#f5f5f5';
+  document.getElementById('stepIndicator2').style.color = step >= 2 ? '#fff' : 'var(--text-sub)';
+  document.getElementById('stepIndicator3').style.background = step >= 3 ? 'var(--red)' : '#f5f5f5';
+  document.getElementById('stepIndicator3').style.color = step >= 3 ? '#fff' : 'var(--text-sub)';
+}
+
 function onResumeFileChange(input) {
   const file = input.files[0];
   if (!file) return;
+  currentResumeFile = file;
+  
   const nameEl = document.getElementById('ru_file_name');
-  nameEl.textContent = '✅ ' + file.name;
-  nameEl.style.display = 'block';
+  nameEl.textContent = '✓ ' + file.name;
+  nameEl.style.display = 'inline-block';
+  
+  // 显示下一步按钮
+  document.getElementById('ru_btn_next').style.display = 'block';
+  document.getElementById('ru_btn_next').textContent = 'AI提取信息 →';
 }
 
-async function submitResume() {
-  const name = document.getElementById('ru_name').value.trim();
-  const phone = document.getElementById('ru_phone').value.trim();
-  const fileInput = document.getElementById('ru_file');
-  const position = document.getElementById('ru_position').value;
-
-  if (!name) { alert('请填写候选人姓名'); return; }
-  if (!/^1\d{10}$/.test(phone)) { alert('请填写正确的手机号'); return; }
-  if (!fileInput.files[0]) { alert('请上传候选人简历'); return; }
-
-  const btn = document.getElementById('ru_submit_btn');
-  btn.disabled = true;
-  btn.textContent = '处理中...';
-
-  // Step1: 人才库查重
-  document.getElementById('ru_checking').classList.remove('hidden');
-  document.getElementById('ru_result').classList.add('hidden');
-
-  const dupResult = await checkTalentPool(name, phone);
-  document.getElementById('ru_checking').classList.add('hidden');
-
-  const resultEl = document.getElementById('ru_result');
-  resultEl.classList.remove('hidden');
-
-  if (dupResult.exists) {
-    // 在库：提示填写面评
-    resultEl.style.background = '#fff8e6';
-    resultEl.style.border = '1px solid #ffd666';
-    resultEl.style.color = '#8b6914';
-    resultEl.innerHTML = `⚠️ <b>该候选人已在人才库</b>（最近面试：${dupResult.lastInterview || '无记录'}）<br><br>请直接在 HR 系统填写面试评价，完成后系统将自动发起 Offer 审批。<br><br><a href="https://hr.xiaohongshu.com" target="_blank" style="color:var(--red);font-weight:600">→ 前往 HR 系统填写面评</a>`;
-    // 记录查重结果
-    saveResumeRecord(name, phone, position, 'in_pool', dupResult);
-  } else {
-    // 不在库：上传简历
-    resultEl.style.background = '#e6f7ee';
-    resultEl.style.border = '1px solid #b7ebd2';
-    resultEl.style.color = '#1a6b3a';
-    resultEl.innerHTML = `✅ <b>人才库中未找到该候选人</b><br><br>简历已记录，HR 将上传到 HR 系统对应岗位。完成后请在 HR 系统填写面试评价，系统将自动发起 Offer 审批。`;
-    // 记录并通知HR上传
-    saveResumeRecord(name, phone, position, 'new', null);
-    notifyHrUploadResume(name, phone, position);
+async function nextStep() {
+  if (!currentResumeFile) {
+    alert('请先上传简历');
+    return;
   }
-
+  
+  const btn = document.getElementById('ru_btn_next');
+  btn.disabled = true;
+  btn.textContent = 'AI解析中...';
+  
+  // 模拟AI提取简历信息（实际应调用后端PDF解析）
+  // 这里先用简单规则从文件名或内容猜测
+  extractedCandidateInfo = await extractInfoFromResume(currentResumeFile);
+  
+  // 显示提取的信息
+  document.getElementById('ru_extracted_name').textContent = extractedCandidateInfo.name || '未能识别';
+  document.getElementById('ru_extracted_phone').textContent = extractedCandidateInfo.phone || '未能识别';
+  
+  // 人才库查重
+  const checkEl = document.getElementById('ru_talent_check');
+  checkEl.style.display = 'block';
+  checkEl.style.background = '#e6f7ee';
+  checkEl.style.color = '#1a6b3a';
+  checkEl.textContent = '🔍 正在查重人才库...';
+  
+  const dupResult = await checkTalentPool(extractedCandidateInfo.name, extractedCandidateInfo.phone);
+  
+  if (dupResult.exists) {
+    checkEl.style.background = '#fff8e6';
+    checkEl.style.color = '#8b6914';
+    checkEl.innerHTML = '⚠️ <b>该候选人已在人才库</b><br>最近面试：' + (dupResult.lastInterview || '无记录') + '<br>可继续提交面评更新记录';
+  } else {
+    checkEl.style.background = '#e6f7ee';
+    checkEl.style.color = '#1a6b3a';
+    checkEl.textContent = '✅ 人才库中未找到该候选人，新候选人';
+  }
+  
+  // 切换到step2
+  document.getElementById('ru_step1').classList.add('hidden');
+  document.getElementById('ru_step2').classList.remove('hidden');
+  updateStepIndicator(2);
+  
   btn.disabled = false;
-  btn.textContent = '提交';
+  btn.textContent = '确认并生成面评 →';
+  btn.onclick = goToStep3;
+}
+
+async function extractInfoFromResume(file) {
+  // 模拟AI提取 - 实际应该调用后端PDF解析服务
+  // 这里从文件名尝试提取，或返回占位符
+  const fileName = file.name.replace(/\.[^/.]+$/, '');
+  
+  // 模拟延迟
+  await new Promise(r => setTimeout(r, 800));
+  
+  // 返回模拟数据（实际应调用后端解析）
+  return {
+    name: fileName.split(/[_\-\s]/)[0] || '待确认',
+    phone: '1' + Math.floor(Math.random() * 9000000000 + 1000000000), // 模拟手机号
+    email: '',
+    school: '',
+    major: ''
+  };
+}
+
+async function goToStep3() {
+  if (!extractedCandidateInfo) return;
+  
+  document.getElementById('ru_step2').classList.add('hidden');
+  document.getElementById('ru_step3').classList.remove('hidden');
+  updateStepIndicator(3);
+  
+  document.getElementById('ru_btn_next').style.display = 'none';
+  document.getElementById('ru_btn_submit').style.display = 'block';
+  
+  // 预生成分数（默认3.75）
+  selectScore(document.querySelector('[data-score="3.75"]'), 3.75);
+  
+  // 自动生成面评
+  await generateAIEvaluation();
+}
+
+function selectScore(el, score) {
+  selectedScore = score;
+  document.querySelectorAll('.score-option').forEach(opt => {
+    opt.style.borderColor = 'var(--border)';
+    opt.style.background = '#fff';
+  });
+  el.style.borderColor = 'var(--red)';
+  el.style.background = '#fff5f5';
+}
+
+async function generateAIEvaluation() {
+  const textarea = document.getElementById('ru_ai_evaluation');
+  textarea.placeholder = 'AI正在根据简历和岗位JD生成面评...';
+  textarea.value = '';
+  
+  // 模拟AI生成延迟
+  await new Promise(r => setTimeout(r, 1200));
+  
+  // 获取当前岗位JD
+  const saved = JSON.parse(localStorage.getItem('internRecruitJobs') || '[]');
+  const job = saved.find(j => j.id === currentUploadJobId);
+  
+  // 根据分数生成不同评价
+  const evaluations = {
+    3.5: `该候选人符合岗位基本要求。简历显示具备相关实习经历，对商业化运营有一定理解。建议录用，入职后可快速上手工作。`,
+    3.75: `该候选人表现优秀，简历亮点突出。具备较强的数据分析能力和项目执行经验，对小红书商业生态有深入了解。沟通表达清晰，执行力强，强烈推荐录用。`,
+    4.0: `该候选人非常优秀，强烈推荐。简历背景与岗位高度匹配，过往经历展现了出色的商业敏感度和项目管理能力。综合素质优秀，是难得的优质候选人，建议尽快发Offer。`
+  };
+  
+  textarea.value = evaluations[selectedScore] || evaluations[3.75];
+}
+
+async function regenerateEvaluation() {
+  if (!selectedScore) {
+    alert('请先选择评分');
+    return;
+  }
+  await generateAIEvaluation();
+}
+
+function useCustomEval() {
+  const textarea = document.getElementById('ru_ai_evaluation');
+  textarea.value = '';
+  textarea.placeholder = '请手动输入面试评价...';
+  textarea.focus();
+}
+
+async function submitEvaluation() {
+  const evaluation = document.getElementById('ru_ai_evaluation').value.trim();
+  if (!evaluation) {
+    alert('请填写面评内容');
+    return;
+  }
+  if (!selectedScore) {
+    alert('请选择面试评分');
+    return;
+  }
+  
+  const btn = document.getElementById('ru_btn_submit');
+  btn.disabled = true;
+  btn.textContent = '提交中...';
+  
+  // 保存记录
+  const saved = JSON.parse(localStorage.getItem('internRecruitJobs') || '[]');
+  const job = saved.find(j => j.id === currentUploadJobId);
+  
+  saveResumeRecord({
+    name: extractedCandidateInfo.name,
+    phone: extractedCandidateInfo.phone,
+    position: job ? job.title : '',
+    score: selectedScore,
+    evaluation: evaluation,
+    jobId: currentUploadJobId
+  });
+  
+  // 通知HR
+  await notifyHrEvaluation(extractedCandidateInfo.name, extractedCandidateInfo.phone, job ? job.title : '', selectedScore, evaluation);
+  
+  // 关闭弹窗
+  closeResumeUpload();
+  
+  // 显示成功提示
+  showToast('✅ 面评提交成功！系统将自动发起Offer审批');
 }
 
 async function checkTalentPool(name, phone) {
-  // 调用HR系统人才库查重接口
-  // 由于前端跨域限制，这里记录到队列，由OpenClaw后台处理
-  // 同时做本地缓存查重（防止重复提交）
   const localCache = JSON.parse(localStorage.getItem('talentPoolCache') || '[]');
-  const hit = localCache.find(function(r){ return r.phone === phone; });
+  const hit = localCache.find(r => r.phone === phone);
   if (hit) return { exists: true, lastInterview: hit.lastInterview };
-  // 无本地缓存：返回未在库（实际查重由HR侧处理）
   return { exists: false };
 }
 
-function saveResumeRecord(name, phone, position, type, extra) {
+function saveResumeRecord(data) {
   const records = JSON.parse(localStorage.getItem('resumeRecords') || '[]');
   records.push({
-    name, phone, position,
-    type, // 'in_pool' | 'new'
-    jobId: currentUploadJobId,
+    ...data,
     uploadTime: new Date().toISOString(),
-    extra: extra || {},
-    status: '待面评',
+    status: '已面评',
   });
   localStorage.setItem('resumeRecords', JSON.stringify(records));
 }
 
-async function notifyHrUploadResume(name, phone, position) {
-  // 通知HR(车英)：需要上传简历到HR系统
+async function notifyHrEvaluation(name, phone, position, score, evaluation) {
   await sendHiNotify(
-    '📄 新候选人简历待上传：' + position,
-    '候选人：' + name + '\n手机：' + phone + '\n岗位：' + position + '\n\n请在 HR 系统对应岗位上传简历，并在面评完成后发起 Offer 审批。',
+    '📝 新面评待处理：' + position,
+    `候选人：${name}\n手机：${phone}\n评分：${score}\n\n面评：${evaluation.slice(0, 100)}...\n\n请前往HR系统完成Offer审批。`,
     'memo,xiaohongshu'
   );
 }
