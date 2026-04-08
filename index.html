@@ -480,6 +480,93 @@
       .table-wrap td, .table-wrap th { padding: 10px 6px; font-size: 11px; }
     }
 
+    /* ===== FAQ 折叠 ===== */
+    .faq-section {
+      margin-top: 24px;
+    }
+    .faq-toggle {
+      width: 100%;
+      background: none;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-radius: var(--radius);
+      background: var(--gray-light);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      transition: background 0.2s;
+    }
+    .faq-toggle:hover { background: #ebebeb; }
+    .faq-toggle-icon { font-size: 12px; color: var(--gray); transition: transform 0.2s; }
+    .faq-toggle.open .faq-toggle-icon { transform: rotate(180deg); }
+    .faq-list {
+      background: #fff;
+      border-radius: 0 0 var(--radius) var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.35s ease;
+    }
+    .faq-list.open { max-height: 2000px; }
+    .faq-item {
+      border-bottom: 1px solid var(--border);
+      padding: 0;
+    }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q {
+      width: 100%;
+      background: none;
+      border: none;
+      text-align: left;
+      padding: 14px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      line-height: 1.5;
+    }
+    .faq-q:hover { background: var(--gray-light); }
+    .faq-q-icon { color: var(--red); flex-shrink: 0; margin-top: 1px; }
+    .faq-a {
+      font-size: 13px;
+      color: var(--text-sub);
+      padding: 0 18px 14px 38px;
+      line-height: 1.75;
+      display: none;
+    }
+    .faq-a.open { display: block; }
+
+    /* ===== 自定义JD切换 ===== */
+    .jd-mode-bar {
+      display: flex;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .jd-mode-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: none;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--gray);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .jd-mode-btn.active {
+      background: var(--red);
+      color: #fff;
+    }
+
     /* ===== 隐藏类 ===== */
     .hidden { display: none !important; }
   </style>
@@ -546,6 +633,73 @@
       </div>
       <button class="btn btn-primary" onclick="loginAsAdmin()">进入管理后台</button>
     </div>
+
+    <!-- FAQ 折叠区 -->
+    <div class="faq-section">
+      <button class="faq-toggle" id="faqToggleBtn" onclick="toggleFaq()">
+        <span>❓ 常见问题 FAQ</span>
+        <span class="faq-toggle-icon">▼</span>
+      </button>
+      <div class="faq-list" id="faqList">
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaqItem(this)">
+            <span class="faq-q-icon">Q</span>
+            <span>我有多少实习生 HC？HC 不够怎么办？</span>
+          </button>
+          <div class="faq-a">每个团队默认分配 10 个实习生 HC/年。如果 HC 用完了，请联系 HR（车英）申请额外名额，评估通过后会在系统中更新。</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaqItem(this)">
+            <span class="faq-q-icon">Q</span>
+            <span>岗位提交后多久能收到简历？</span>
+          </button>
+          <div class="faq-a">HR 审核通常在 1 个工作日内完成。审核通过后，岗位会在 2-3 个工作日内发布到实习僧等渠道，简历将陆续推送给你。</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaqItem(this)">
+            <span class="faq-q-icon">Q</span>
+            <span>实习生最少要实习多久？每周可以几天？</span>
+          </button>
+          <div class="faq-a">原则上要求每周至少到岗 4 天，连续实习 3 个月以上。有特殊情况请提前与 HR 沟通，我们会尽量匹配。</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaqItem(this)">
+            <span class="faq-q-icon">Q</span>
+            <span>我需要提前多久提交实习需求？</span>
+          </button>
+          <div class="faq-a">建议提前 <strong>4-6 周</strong>提交。从发布JD到收到简历、完成面试、到岗，整个流程一般需要 3-5 周时间。越早提交，越能避免青黄不接。</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaqItem(this)">
+            <span class="faq-q-icon">Q</span>
+            <span>AI 生成的 JD 不太准确，我可以自己改吗？</span>
+          </button>
+          <div class="faq-a">当然可以！AI 生成后，你可以直接在文本框里修改职位名称和 JD 内容。如果完全想自己写，也可以在第3步切换到「自定义JD」模式，从零开始填写。</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaqItem(this)">
+            <span class="faq-q-icon">Q</span>
+            <span>实习生薪资是怎么定的？</span>
+          </button>
+          <div class="faq-a">实习生薪资参考市场水平，一般按天/小时结算，具体金额根据实习生背景和岗位匹配度决定。HR 会在面试前给你建议区间，你也可以随时来问我。</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaqItem(this)">
+            <span class="faq-q-icon">Q</span>
+            <span>实习生转正有机会吗？走什么流程？</span>
+          </button>
+          <div class="faq-a">有！表现优秀的实习生可以走校招转正通道。时间节点一般在 9-10 月（秋招季），届时 HR 会主动联系你评估转正资格，你也可以随时和 HR 提。</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaqItem(this)">
+            <span class="faq-q-icon">Q</span>
+            <span>提交岗位后，我在哪里能看到进展？</span>
+          </button>
+          <div class="faq-a">审核结果会通过 Hi（企业IM）推送给你。日常简历推进情况可以登录管理员后台查看，或直接找 HR 同步。后续会上线更多进度追踪功能。</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -638,32 +792,60 @@
       </div>
     </div>
 
-    <!-- Step 3: AI生成JD -->
+    <!-- Step 3: AI生成JD / 自定义JD -->
     <div id="step3" class="hidden">
       <div class="card">
-        <div class="page-title">AI 生成职位信息</div>
-        <div class="page-sub">根据您的描述，AI将自动生成职位名称和JD</div>
+        <div class="page-title">职位信息</div>
+        <div class="page-sub">选择 AI 生成，或自己手写 JD</div>
 
-        <div style="margin-bottom:20px">
-          <button class="btn btn-ghost" id="btnGenerate" onclick="generateJD()">
-            ✨ 生成职位名称和JD
-          </button>
+        <!-- 模式切换 -->
+        <div class="jd-mode-bar">
+          <button class="jd-mode-btn active" id="modeAiBtn" onclick="switchJdMode('ai')">✨ AI 生成</button>
+          <button class="jd-mode-btn" id="modeCustomBtn" onclick="switchJdMode('custom')">✏️ 自定义JD</button>
         </div>
 
-        <div id="aiLoading" class="ai-loading hidden">
-          <div class="spinner"></div>
-          AI 正在生成中，请稍候...
+        <!-- AI模式区 -->
+        <div id="aiModeArea">
+          <div style="margin-bottom:20px">
+            <button class="btn btn-ghost" id="btnGenerate" onclick="generateJD()">
+              ✨ 生成职位名称和JD
+            </button>
+          </div>
+
+          <div id="aiLoading" class="ai-loading hidden">
+            <div class="spinner"></div>
+            AI 正在生成中，请稍候...
+          </div>
+
+          <div id="jdResult" class="hidden">
+            <div class="form-group">
+              <label class="form-label">职位名称（可编辑）</label>
+              <input class="form-input" id="s3JobTitle" type="text" placeholder="职位名称" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">职位描述 JD（可编辑）</label>
+              <textarea class="form-textarea" id="s3JD" rows="10"></textarea>
+              <div class="form-hint">可直接在上方编辑调整 JD 内容</div>
+            </div>
+          </div>
         </div>
 
-        <div id="jdResult" class="hidden">
+        <!-- 自定义模式区 -->
+        <div id="customModeArea" class="hidden">
           <div class="form-group">
-            <label class="form-label">职位名称（可编辑）</label>
-            <input class="form-input" id="s3JobTitle" type="text" placeholder="职位名称" />
+            <label class="form-label">职位名称<span class="required">*</span></label>
+            <input class="form-input" id="s3JobTitleCustom" type="text" placeholder="例如：电商营销实习生"
+                   oninput="syncCustomJd()" />
           </div>
           <div class="form-group">
-            <label class="form-label">职位描述 JD（可编辑）</label>
-            <textarea class="form-textarea" id="s3JD" rows="10"></textarea>
-            <div class="form-hint">可直接在上方编辑调整 JD 内容</div>
+            <label class="form-label">职位描述 JD<span class="required">*</span></label>
+            <textarea class="form-textarea" id="s3JDCustom" rows="12"
+              placeholder="请填写岗位职责和任职要求...&#10;&#10;建议包含：&#10;【岗位职责】&#10;1. ...&#10;&#10;【任职要求】&#10;1. ..."
+              oninput="syncCustomJd()"></textarea>
+            <div class="form-hint">自由填写，HR 会在发布前做格式规范处理</div>
+          </div>
+          <div style="background:var(--red-light);border-radius:10px;padding:12px 14px;font-size:13px;color:#c0392b;margin-bottom:4px">
+            💡 小提示：JD 写得越具体，越能吸引匹配的候选人。可参考其他岗位的 JD 格式。
           </div>
         </div>
 
@@ -843,6 +1025,7 @@
 // ===========================
 const ADMIN_PWD = '920506';
 const TOTAL_HC = 10;
+let jdMode = 'ai'; // 'ai' | 'custom'
 
 // Mock：管理员预置5条岗位数据
 const MOCK_JOBS = [
@@ -979,18 +1162,26 @@ function logout() {
 function resetManagerFlow() {
   currentStep = 1;
   jdGenerated = false;
+  jdMode = 'ai';
   // 清空表单
   document.getElementById('s1Name').value = currentUser;
   document.getElementById('s1Dept').value = '';
   document.getElementById('s1Desc').value = '';
   document.getElementById('s3JobTitle').value = '';
   document.getElementById('s3JD').value = '';
+  document.getElementById('s3JobTitleCustom').value = '';
+  document.getElementById('s3JDCustom').value = '';
   document.getElementById('s4LastDate').value = '';
   document.getElementById('s4OnboardDate').value = '';
   document.getElementById('s4Suggestion').classList.add('hidden');
   document.getElementById('jdResult').classList.add('hidden');
   document.getElementById('aiLoading').classList.add('hidden');
   document.getElementById('btnStep3Next').disabled = true;
+  // 重置模式切换
+  document.getElementById('modeAiBtn').classList.add('active');
+  document.getElementById('modeCustomBtn').classList.remove('active');
+  document.getElementById('aiModeArea').classList.remove('hidden');
+  document.getElementById('customModeArea').classList.add('hidden');
 
   showStep(1);
 }
@@ -1062,13 +1253,65 @@ function validateStep(step) {
     if (!desc) { alert('请描述实习生的工作内容'); return false; }
   }
   if (step === 3) {
-    if (!jdGenerated) { alert('请先点击"生成职位名称和JD"按钮'); return false; }
-    const title = document.getElementById('s3JobTitle').value.trim();
-    const jd = document.getElementById('s3JD').value.trim();
-    if (!title) { alert('职位名称不能为空'); return false; }
-    if (!jd) { alert('JD内容不能为空'); return false; }
+    if (jdMode === 'ai') {
+      if (!jdGenerated) { alert('请先点击"生成职位名称和JD"按钮，或切换到自定义JD模式'); return false; }
+      const title = document.getElementById('s3JobTitle').value.trim();
+      const jd = document.getElementById('s3JD').value.trim();
+      if (!title) { alert('职位名称不能为空'); return false; }
+      if (!jd) { alert('JD内容不能为空'); return false; }
+    } else {
+      const title = document.getElementById('s3JobTitleCustom').value.trim();
+      const jd = document.getElementById('s3JDCustom').value.trim();
+      if (!title) { alert('请填写职位名称'); return false; }
+      if (!jd) { alert('请填写职位描述JD'); return false; }
+      // 同步到 s3JobTitle / s3JD 供后续步骤读取
+      document.getElementById('s3JobTitle').value = title;
+      document.getElementById('s3JD').value = jd;
+    }
   }
   return true;
+}
+
+// ===========================
+// JD 模式切换
+// ===========================
+function switchJdMode(mode) {
+  jdMode = mode;
+  const isAi = mode === 'ai';
+  document.getElementById('modeAiBtn').classList.toggle('active', isAi);
+  document.getElementById('modeCustomBtn').classList.toggle('active', !isAi);
+  document.getElementById('aiModeArea').classList.toggle('hidden', !isAi);
+  document.getElementById('customModeArea').classList.toggle('hidden', isAi);
+
+  if (isAi) {
+    // AI模式：已生成才解锁下一步
+    document.getElementById('btnStep3Next').disabled = !jdGenerated;
+  } else {
+    // 自定义模式：只要标题和JD有内容就解锁
+    syncCustomJd();
+  }
+}
+
+function syncCustomJd() {
+  const title = document.getElementById('s3JobTitleCustom').value.trim();
+  const jd = document.getElementById('s3JDCustom').value.trim();
+  document.getElementById('btnStep3Next').disabled = !(title && jd);
+}
+
+// ===========================
+// FAQ 交互
+// ===========================
+function toggleFaq() {
+  const btn = document.getElementById('faqToggleBtn');
+  const list = document.getElementById('faqList');
+  const isOpen = list.classList.toggle('open');
+  btn.classList.toggle('open', isOpen);
+}
+
+function toggleFaqItem(qBtn) {
+  const answer = qBtn.nextElementSibling;
+  const isOpen = answer.classList.toggle('open');
+  qBtn.style.background = isOpen ? 'var(--red-light)' : '';
 }
 
 // ===========================
