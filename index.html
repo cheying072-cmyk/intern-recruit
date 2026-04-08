@@ -603,6 +603,16 @@
 
     /* ===== 隐藏类 ===== */
     .hidden { display: none !important; }
+
+    /* ===== 需求背景 ===== */
+    .bg-options { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+    .bg-opt { display: flex; align-items: center; gap: 8px; border: 1.5px solid var(--border); border-radius: 10px; padding: 10px 16px; cursor: pointer; transition: all 0.2s; flex: 1; min-width: 120px; }
+    .bg-opt:hover { border-color: var(--red); background: var(--red-light); }
+    .bg-opt input[type=radio] { display: none; }
+    .bg-opt.selected { border-color: var(--red); background: var(--red-light); }
+    .bg-opt-icon { font-size: 18px; }
+    .bg-opt-label { font-size: 14px; font-weight: 600; color: var(--text); }
+    .bg-new-warn { background: #fff8e6; border: 1px solid #ffd666; border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #8b6914; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -829,6 +839,32 @@
             </optgroup>
           </select>
           <div class="form-hint">对应 HR 系统中的职位类，用于渠道发布分类</div>
+        </div>
+        <div class="form-group" id="bgGroup">
+          <label class="form-label">需求背景<span class="required">*</span></label>
+          <div class="bg-options" id="bgOptions">
+            <label class="bg-opt" id="bgOpt_replace">
+              <input type="radio" name="reqBg" value="replace" onchange="onBgChange(this)" />
+              <span class="bg-opt-icon">🔄</span>
+              <span class="bg-opt-label">离职替补</span>
+            </label>
+            <label class="bg-opt" id="bgOpt_new">
+              <input type="radio" name="reqBg" value="new" onchange="onBgChange(this)" />
+              <span class="bg-opt-icon">✨</span>
+              <span class="bg-opt-label">新增需求</span>
+            </label>
+            <label class="bg-opt" id="bgOpt_other">
+              <input type="radio" name="reqBg" value="other" onchange="onBgChange(this)" />
+              <span class="bg-opt-icon">💬</span>
+              <span class="bg-opt-label">其他</span>
+            </label>
+          </div>
+          <div id="bgNewWarn" class="bg-new-warn hidden">
+            ⚠️ 新增需求已通知 HRBP 审批 HC，审批通过后即可继续提交。
+          </div>
+          <div id="bgOtherInput" class="hidden" style="margin-top:10px">
+            <input class="form-input" id="s1BgOther" type="text" placeholder="请简要说明需求背景" maxlength="50" />
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">希望这个实习生做的事情和解决的问题<span class="required">*</span></label>
@@ -1429,6 +1465,12 @@ function resetManagerFlow() {
   document.getElementById('jdResult').classList.add('hidden');
   document.getElementById('aiLoading').classList.add('hidden');
   document.getElementById('btnStep3Next').disabled = true;
+  // 重置需求背景
+  document.querySelectorAll('input[name="reqBg"]').forEach(function(r){ r.checked = false; });
+  document.querySelectorAll('.bg-opt').forEach(function(el){ el.classList.remove('selected'); });
+  document.getElementById('bgNewWarn').classList.add('hidden');
+  document.getElementById('bgOtherInput').classList.add('hidden');
+  if(document.getElementById('s1BgOther')) document.getElementById('s1BgOther').value = '';
   // 重置模式切换
   document.getElementById('modeAiBtn').classList.add('active');
   document.getElementById('modeCustomBtn').classList.remove('active');
@@ -1501,9 +1543,11 @@ function validateStep(step) {
   if (step === 1) {
     const dept = document.getElementById('s1Dept').value.trim();
     const cat = document.getElementById('s1JobCategory').value;
+    const bg = document.querySelector('input[name="reqBg"]:checked');
     const desc = document.getElementById('s1Desc').value.trim();
     if (!dept) { alert('请选择所在部门'); return false; }
     if (!cat) { alert('请选择职位类别'); return false; }
+    if (!bg) { alert('请选择需求背景'); return false; }
     if (!desc) { alert('请描述实习生的工作内容'); return false; }
   }
   if (step === 3) {
@@ -1859,6 +1903,8 @@ function submitJob() {
     name: document.getElementById('s1Name').value,
     dept: document.getElementById('s1Dept').value,
     jobCategory: document.getElementById('s1JobCategory').value,
+    reqBackground: (document.querySelector('input[name="reqBg"]:checked') || {}).value || '',
+    reqBackgroundNote: (document.getElementById('s1BgOther') || {}).value || '',
     title: document.getElementById('s3JobTitle').value,
     jd: document.getElementById('s3JD').value,
     submitTime,
@@ -1982,53 +2028,47 @@ function showToast(msg) {
 }
 
 async function approveJob(jobId) {
-  if (!confirm('确认审核通过？\n\n审核后将自动：\n1. 标记岗位为"招聘中"\n2. Hi 通知用人经理\n3. 发布到 HR 系统\n4. 发布到实习僧')) return;
-
-  // 更新 localStorage 状态
   const saved = JSON.parse(localStorage.getItem('internRecruitJobs') || '[]');
-  const idx = saved.findIndex(j => j.id === jobId);
-  let approvedJob = null;
-  if (idx !== -1) {
-    saved[idx].status = '招聘中';
-    approvedJob = saved[idx];
+  const idx = saved.findIndex(function(j){ return j.id === jobId; });
+  if (idx === -1) return;
+  const job = saved[idx];
+
+  showToast('🤖 AI 正在审核 JD 内容...');
+  const auditResult = await aiAuditJD(job);
+
+  if (!auditResult.pass) {
+    saved[idx].status = '审核不通过';
+    saved[idx].auditReason = auditResult.reason;
     localStorage.setItem('internRecruitJobs', JSON.stringify(saved));
+    renderAdminTable();
+    alert('❌ AI 审核不通过\n\n原因：' + auditResult.reason + '\n\n请联系用人经理修改后重新提交。');
+    return;
   }
+
+  if (!confirm('✅ AI 审核通过\n\n岗位：' + job.title + '\n经理：' + job.name + '\n\n确认发布到 HR 系统 + 实习僧？')) return;
+
+  saved[idx].status = '招聘中';
+  localStorage.setItem('internRecruitJobs', JSON.stringify(saved));
   const pending = JSON.parse(localStorage.getItem('pendingReview') || '[]');
-  const pi = pending.findIndex(j => j.id === jobId);
-  if (pi !== -1) {
-    pending[pi].status = '招聘中';
-    if (!approvedJob) approvedJob = pending[pi];
-    localStorage.setItem('pendingReview', JSON.stringify(pending));
-  }
+  const pi = pending.findIndex(function(j){ return j.id === jobId; });
+  if (pi !== -1) { pending[pi].status = '招聘中'; localStorage.setItem('pendingReview', JSON.stringify(pending)); }
   renderAdminTable();
 
-  if (!approvedJob) return;
+  await notifyManagerPublished(job);
 
-  // 通知经理
-  await notifyManagerPublished(approvedJob);
-
-  // 🚀 触发 OpenClaw 自动发布：推送带 job 数据的 ntfy 消息
-  // OpenClaw 订阅这个 topic，收到后自动跑浏览器发布
   showToast('⏳ 审核通过！正在触发自动发布...');
   try {
-    const jobPayload = JSON.stringify(approvedJob);
     await fetch('https://ntfy.sh/xhs-intern-recruit-jiayijie1', {
       method: 'POST',
-      headers: {
-        'Title': `📋 新岗位待发布: ${approvedJob.title}`,
-        'Tags': 'intern-recruit-publish',
-        'X-Job-Data': jobPayload,
-        'Content-Type': 'text/plain',
-      },
-      body: `PUBLISH_JOB:${jobPayload}`,
+      headers: { 'Title': '📋 新岗位待发布: ' + job.title, 'Tags': 'intern-recruit-publish' },
+      body: 'PUBLISH_JOB:' + JSON.stringify(job),
     });
-    showToast('✅ 已触发自动发布！OpenClaw 正在操作 HR 系统，约1分钟内完成。');
-  } catch (e) {
-    // 降级：写入 localStorage 队列
+    showToast('✅ 审核通过！HR 系统正在自动发布，约1分钟完成。');
+  } catch(e) {
     const pubQueue = JSON.parse(localStorage.getItem('hrPublishQueue') || '[]');
-    pubQueue.push({ ...approvedJob, queuedAt: Date.now() });
+    pubQueue.push(Object.assign({}, job, { queuedAt: Date.now() }));
     localStorage.setItem('hrPublishQueue', JSON.stringify(pubQueue));
-    showToast('✅ 审核通过！发布任务已入队，稍后 OpenClaw 会自动处理。');
+    showToast('✅ 审核通过！发布任务已入队。');
   }
 }
 
@@ -2078,6 +2118,52 @@ function escHtml(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+// ===========================
+// 需求背景
+// ===========================
+function onBgChange(radio) {
+  document.querySelectorAll('.bg-opt').forEach(function(el) { el.classList.remove('selected'); });
+  radio.closest('.bg-opt').classList.add('selected');
+  var val = radio.value;
+  document.getElementById('bgNewWarn').classList.toggle('hidden', val !== 'new');
+  document.getElementById('bgOtherInput').classList.toggle('hidden', val !== 'other');
+  if (val === 'new') {
+    var managerName = (document.getElementById('s1Name') && document.getElementById('s1Name').value) || '用人经理';
+    var deptEl = document.getElementById('s1DeptDisplay');
+    var dept = deptEl ? deptEl.textContent.trim() : '';
+    if (dept === '请选择所在部门' || !dept) dept = '未填写';
+    notifyHrbpNewHC(managerName, dept);
+  }
+}
+
+async function notifyHrbpNewHC(managerName, dept) {
+  var msg = '📋 HC 审批申请\n\n用人经理 ' + managerName + ' 正在提交「新增实习生需求」，部门：' + dept + '。\n\n请确认是否有可用 HC 并回复审批结果。如 HC 不足，请联系车英添加名额。';
+  try {
+    await fetch('https://codewizagent.devops.xiaohongshu.com/agent/api/direct/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userAccessToken: 'ska777de83c31cef5d3e6d0585cbe29c27d0f430d8c4257a5499708167fba0af11',
+        targetEmail: 'tangwenwen@xiaohongshu.com',
+        message: msg,
+      }),
+    });
+  } catch(e) {}
+}
+
+async function aiAuditJD(job) {
+  var jdText = (job.title || '') + ' ' + (job.jd || '');
+  var riskKeywords = ['996','007','无偿','白嫖','奴隶','歧视','性别限制','颜值要求','身高要求','非法','违规','洗钱','传销','诈骗','不得请假','无偿加班'];
+  var hitKeywords = riskKeywords.filter(function(k){ return jdText.indexOf(k) !== -1; });
+  if (hitKeywords.length > 0) {
+    return { pass: false, reason: 'JD 包含敏感词：' + hitKeywords.join('、') + '，可能引发舆情，请修改后重新提交。' };
+  }
+  if (!job.jd || job.jd.trim().length < 50) {
+    return { pass: false, reason: 'JD 内容过短（少于50字），请补充完整的岗位职责和任职要求。' };
+  }
+  return { pass: true };
 }
 </script>
 </body>
