@@ -2054,7 +2054,7 @@ JD: ${job.jd}
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + OPENCLAW_HOOK_TOKEN
       },
-      body: JSON.stringify({ message: msg })
+      body: JSON.stringify({ message: msg, sessionKey: 'agent:main:draft:mnoqq64u-djgddc', wakeMode: 'now' })
     });
     const result = await resp.json();
     if (result.ok) {
@@ -2077,7 +2077,7 @@ JD: ${job.jd}
 const HR_EMAIL = 'jiayijie1@xiaohongshu.com';
 const NTFY_TOPIC = 'xhs-intern-recruit-jiayijie1';
 const GIST_ID = '67876cc5346aef6aac3b85da9ec3d978';
-const OPENCLAW_HOOK_URL = 'https://10.40.99.172:18790/hooks/agent';
+const OPENCLAW_HOOK_URL = 'http://10.40.99.172:18792/hooks/agent';
 const OPENCLAW_HOOK_TOKEN = '12ff8290e53ba22738a351cb2998d734';
 
 async function sendHiNotify(title, body, tags = 'memo,xiaohongshu') {
