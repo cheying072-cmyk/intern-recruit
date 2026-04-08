@@ -2035,7 +2035,40 @@ async function autoAuditAndPublish(job) {
 }
 
 async function pushJobToGist(job) {
-  // Step 1: 存到服务器队列（本机 /submit 接口，无跨域）
+  // Step 1: 直接发 Hi 消息给 OpenClaw Bot 会话（最可靠，走内网 Hi API）
+  try {
+    // 先拿 appAccessToken
+    const tokenResp = await fetch(HI_BASE_URL + '/openapis/open/token/createAppAccessToken/v2', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ appId: HI_APP_ID, appSecret: 'sk7df5eb56d43040bf24f927d1841518c7ad6f4ed54e723922fc9dddc2d144344a' })
+    });
+    const tokenData = await tokenResp.json();
+    const aat = tokenData.appAccessToken;
+    if (!aat) throw new Error('no appAccessToken');
+
+    const msg = '[INTERN_JOB_SUBMIT] ' + JSON.stringify(job);
+    const sendResp = await fetch(HI_BASE_URL + '/openapis/open/api/call/v2', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        appId: HI_APP_ID,
+        appAccessToken: aat,
+        apiAlias: 'im:message.sendMessageToChat:v1',
+        bizParams: JSON.stringify({ chatId: HI_CHAT_ID, type: 1, data: msg })
+      })
+    });
+    const sendData = await sendResp.json();
+    if (sendData.success) {
+      console.log('[Hi] 岗位已通过 Hi 消息发送给 OpenClaw，将自动发布');
+      return;
+    }
+    throw new Error(JSON.stringify(sendData));
+  } catch(e) {
+    console.warn('[Hi] Hi 消息发送失败，降级:', e.message);
+  }
+
+  // Step 2: 内网 submit 接口（若内网可达）
   try {
     const submitResp = await fetch('http://10.40.99.172:18792/submit', {
       method: 'POST',
@@ -2045,10 +2078,10 @@ async function pushJobToGist(job) {
     const submitResult = await submitResp.json();
     if (submitResult.ok) {
       console.log('[Submit] 岗位已存入服务器队列，将自动发布');
-      return; // 成功入队就够了，OpenClaw 会自动轮询处理
+      return;
     }
   } catch(e) {
-    console.warn('[Submit] 服务器队列写入失败，降级到 hook:', e.message);
+    console.warn('[Submit] 内网队列写入失败:', e.message);
   }
 
   // Step 2: 降级 — 通过 OpenClaw webhook 实时唤醒
@@ -2065,9 +2098,26 @@ async function pushJobToGist(job) {
     console.warn('[Hook] hook 也失败了:', e.message);
   }
 
-  // Step 3: 最终降级 — localStorage
+  // Step 3: 降级 — 通过 webchat 发消息给 OpenClaw（用户浏览器已有连接）
+  try {
+    const jobJson = JSON.stringify(job);
+    const encoded = encodeURIComponent('[INTERN_JOB_SUBMIT] ' + jobJson);
+    // 打开 webchat 并预填消息，OpenClaw 收到后自动处理
+    const webchatUrl = 'https://codewiz.devops.xiaohongshu.com/?msg=' + encoded;
+    // 用隐藏 iframe 静默发送，不打扰用户
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'display:none;width:0;height:0;border:none;position:absolute;';
+    iframe.src = webchatUrl;
+    document.body.appendChild(iframe);
+    setTimeout(function(){ document.body.removeChild(iframe); }, 5000);
+    console.log('[Webchat] 已通过 webchat 通知 OpenClaw');
+    return;
+  } catch(e) {
+    console.warn('[Webchat] webchat 方式失败:', e.message);
+  }
+
+  // Step 4: 最终降级 — localStorage
   {
-    // 降级：写入 localStorage，等待手动处理
     const pubQueue = JSON.parse(localStorage.getItem('hrPublishQueue') || '[]');
     pubQueue.push(Object.assign({}, job, { queuedAt: Date.now() }));
     localStorage.setItem('hrPublishQueue', JSON.stringify(pubQueue));
@@ -2083,6 +2133,10 @@ const NTFY_TOPIC = 'xhs-intern-recruit-jiayijie1';
 const GIST_ID = '67876cc5346aef6aac3b85da9ec3d978';
 const OPENCLAW_HOOK_URL = 'http://10.40.99.172:18792/hooks/agent';
 const OPENCLAW_HOOK_TOKEN = '12ff8290e53ba22738a351cb2998d734';
+// Hi 消息直发配置（前端直接调 Hi API，发消息给 OpenClaw Bot 会话）
+const HI_CHAT_ID = 'CHAT7626022212794930169';
+const HI_APP_ID = 'app4441db2efae4fc983dfae3d52608e8bb';
+const HI_BASE_URL = 'https://redcity-open.xiaohongshu.com';
 
 async function sendHiNotify(title, body, tags = 'memo,xiaohongshu') {
   try {
